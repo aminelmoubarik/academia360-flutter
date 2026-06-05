@@ -12,41 +12,27 @@ class ApiService {
     };
   }
 
-  static Future<List<dynamic>> getStudents() async {
+  static Future<List<dynamic>> _getList(String path) async {
     final headers = await _authHeaders();
     final response = await http.get(
-      Uri.parse('${ApiConstants.baseUrl}/students'),
+      Uri.parse('${ApiConstants.baseUrl}$path'),
       headers: headers,
     );
-    if (response.statusCode == 200) {
-      return jsonDecode(response.body);
-    }
-    throw Exception('Failed to load students');
+    if (response.statusCode == 200) return jsonDecode(response.body);
+    throw Exception('Failed to load $path (${response.statusCode})');
   }
 
-  static Future<List<dynamic>> getClasses() async {
-    final headers = await _authHeaders();
-    final response = await http.get(
-      Uri.parse('${ApiConstants.baseUrl}/classes'),
-      headers: headers,
-    );
-    if (response.statusCode == 200) {
-      return jsonDecode(response.body);
-    }
-    throw Exception('Failed to load classes');
-  }
+  static Future<List<dynamic>> getStudents() => _getList('/students');
+  static Future<List<dynamic>> getProfessors() => _getList('/professors');
+  static Future<List<dynamic>> getRooms() => _getList('/rooms');
+  static Future<List<dynamic>> getDisciplines() => _getList('/disciplines');
+  static Future<List<dynamic>> getClasses() => _getList('/classes');
+  static Future<List<dynamic>> getCourses() => _getList('/courses');
+  static Future<List<dynamic>> getUsers() => _getList('/users');
+  static Future<List<dynamic>> getAttendance() => _getList('/attendance');
 
-  static Future<List<dynamic>> getScheduleByClass(int classId) async {
-    final headers = await _authHeaders();
-    final response = await http.get(
-      Uri.parse('${ApiConstants.baseUrl}/schedule/class/$classId'),
-      headers: headers,
-    );
-    if (response.statusCode == 200) {
-      return jsonDecode(response.body);
-    }
-    throw Exception('Failed to load schedule');
-  }
+  static Future<List<dynamic>> getScheduleByClass(int classId) =>
+      _getList('/schedule/class/$classId');
 
   static Future<Map<String, dynamic>> generateSchedule({
     required int classId,
@@ -65,9 +51,7 @@ class ApiService {
         'replace_existing': replaceExisting,
       }),
     );
-    if (response.statusCode == 200) {
-      return jsonDecode(response.body);
-    }
+    if (response.statusCode == 200) return jsonDecode(response.body);
     throw Exception(jsonDecode(response.body)['detail'] ?? 'Generation failed');
   }
 }

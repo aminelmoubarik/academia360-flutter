@@ -3,7 +3,14 @@ import '../models/user.dart';
 import '../services/auth_service.dart';
 import 'login_screen.dart';
 import 'students_screen.dart';
+import 'professors_screen.dart';
+import 'rooms_screen.dart';
+import 'disciplines_screen.dart';
+import 'attendance_screen.dart';
 import 'schedule_screen.dart';
+import 'classes_screen.dart';
+import 'users_screen.dart';
+import 'courses_screen.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -39,6 +46,34 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
+  void _navigate(String label) {
+    Widget? screen;
+    switch (label) {
+      case 'Students': screen = const StudentsScreen(); break;
+      case 'Professors': screen = const ProfessorsScreen(); break;
+      case 'Rooms': screen = const RoomsScreen(); break;
+      case 'Disciplines': screen = const DisciplinesScreen(); break;
+      case 'Attendance': screen = const AttendanceScreen(); break;
+      case 'Classes': screen = const ClassesScreen(); break;
+      case 'Users': screen = const UsersScreen(); break;
+      case 'Courses': screen = const CoursesScreen(); break;
+      case 'Schedule':
+      case 'My Schedule':
+      case 'Generate Schedule':
+        screen = const ScheduleScreen();
+        break;
+      default:
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('$label — coming soon'),
+            duration: const Duration(seconds: 1),
+          ),
+        );
+        return;
+    }
+    Navigator.push(context, MaterialPageRoute(builder: (_) => screen!));
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -72,7 +107,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   Widget _buildDashboard(User user) {
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         _buildHeader(user),
         Expanded(
@@ -138,42 +172,17 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
-  void _navigate(String label) {
-    switch (label) {
-      case 'Students':
-        Navigator.push(context,
-            MaterialPageRoute(builder: (_) => const StudentsScreen()));
-        break;
-      case 'Schedule':
-      case 'My Schedule':
-        Navigator.push(context,
-            MaterialPageRoute(builder: (_) => const ScheduleScreen()));
-        break;
-      case 'Generate Schedule':
-        Navigator.push(context,
-            MaterialPageRoute(builder: (_) => const ScheduleScreen()));
-        break;
-      default:
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('$label — coming soon'),
-            duration: const Duration(seconds: 1),
-          ),
-        );
-    }
-  }
-
   List<Map<String, dynamic>> _menuItemsForRole(String role) {
     final adminItems = [
       {'icon': Icons.people, 'label': 'Students', 'color': Colors.blue},
       {'icon': Icons.school, 'label': 'Professors', 'color': Colors.green},
       {'icon': Icons.class_, 'label': 'Classes', 'color': Colors.orange},
+      {'icon': Icons.layers, 'label': 'Courses', 'color': Colors.cyan},
       {'icon': Icons.book, 'label': 'Disciplines', 'color': Colors.purple},
       {'icon': Icons.meeting_room, 'label': 'Rooms', 'color': Colors.teal},
       {'icon': Icons.calendar_today, 'label': 'Schedule', 'color': Colors.indigo},
       {'icon': Icons.auto_awesome, 'label': 'Generate Schedule', 'color': Colors.deepOrange},
       {'icon': Icons.fingerprint, 'label': 'Attendance', 'color': Colors.red},
-      {'icon': Icons.bar_chart, 'label': 'Reports', 'color': Colors.brown},
       {'icon': Icons.manage_accounts, 'label': 'Users', 'color': Colors.blueGrey},
     ];
     final secretaryItems = [
@@ -188,9 +197,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
     ];
     final directorItems = [
       {'icon': Icons.calendar_today, 'label': 'Schedule', 'color': Colors.indigo},
-      {'icon': Icons.bar_chart, 'label': 'Reports', 'color': Colors.brown},
       {'icon': Icons.people, 'label': 'Students', 'color': Colors.blue},
       {'icon': Icons.school, 'label': 'Professors', 'color': Colors.green},
+      {'icon': Icons.fingerprint, 'label': 'Attendance', 'color': Colors.red},
     ];
     switch (role) {
       case 'admin': return adminItems;
@@ -237,12 +246,10 @@ class _DashboardCard extends StatelessWidget {
                 child: Icon(icon, size: 32, color: color),
               ),
               const SizedBox(height: 12),
-              Text(
-                label,
-                textAlign: TextAlign.center,
-                style: const TextStyle(
-                    fontSize: 14, fontWeight: FontWeight.w600),
-              ),
+              Text(label,
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                      fontSize: 14, fontWeight: FontWeight.w600)),
             ],
           ),
         ),
