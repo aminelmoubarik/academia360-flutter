@@ -1,46 +1,171 @@
 <!DOCTYPE html>
-<html>
+<html lang="pt">
 <head>
-  <!--
-    If you are serving your web app in a path other than the root, change the
-    href value below to reflect the base path you are serving from.
-
-    The path provided below has to start and end with a slash "/" in order for
-    it to work correctly.
-
-    For more details:
-    * https://developer.mozilla.org/en-US/docs/Web/HTML/Element/base
-
-    This is a placeholder for base href that will be replaced by the value of
-    the `--base-href` argument provided to `flutter build`.
-  -->
   <base href="$FLUTTER_BASE_HREF">
 
   <meta charset="UTF-8">
   <meta content="IE=Edge" http-equiv="X-UA-Compatible">
-  <meta name="description" content="A new Flutter project.">
+  <meta name="description" content="Academia360 - plataforma académica para gestão de utilizadores, horários e assiduidade.">
+  <meta name="theme-color" content="#1C29E1">
+  <meta name="color-scheme" content="light">
 
-  <!-- iOS meta tags & icons -->
   <meta name="mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black">
-  <meta name="apple-mobile-web-app-title" content="academia360_app">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="Academia360">
   <link rel="apple-touch-icon" href="icons/Icon-192.png">
 
-  <!-- Favicon -->
   <link rel="icon" type="image/png" href="favicon.png"/>
-
-  <title>academia360_app</title>
   <link rel="manifest" href="manifest.json">
+
+  <title>Academia360</title>
+
+  <style>
+    :root {
+      --brand-blue: #1C29E1;
+      --brand-deep: #111B9F;
+      --brand-light: #6370FF;
+      --ink: #11131A;
+      --muted: #667085;
+      --bg: #F7F8FC;
+    }
+
+    html, body {
+      height: 100%;
+      margin: 0;
+      background: var(--bg);
+      font-family: Inter, Roboto, Arial, sans-serif;
+      overflow: hidden;
+    }
+
+    #app-splash {
+      position: fixed;
+      inset: 0;
+      z-index: 9999;
+      display: grid;
+      place-items: center;
+      background:
+        radial-gradient(circle at 20% 15%, rgba(99,112,255,.18), transparent 28%),
+        radial-gradient(circle at 85% 20%, rgba(28,41,225,.14), transparent 30%),
+        linear-gradient(135deg, #fff 0%, #eff1ff 46%, #f7f8fc 100%);
+      transition: opacity .38s ease, visibility .38s ease, transform .38s ease;
+    }
+
+    #app-splash.hidden {
+      opacity: 0;
+      visibility: hidden;
+      transform: scale(1.02);
+      pointer-events: none;
+    }
+
+    .splash-card {
+      width: min(360px, calc(100vw - 48px));
+      padding: 36px 30px;
+      border-radius: 34px;
+      background: rgba(255,255,255,.76);
+      border: 1px solid rgba(255,255,255,.9);
+      box-shadow: 0 32px 80px rgba(17,27,159,.18);
+      backdrop-filter: blur(20px);
+      text-align: center;
+      animation: cardIn .72s cubic-bezier(.2,.9,.25,1) both;
+    }
+
+    .logo-mark {
+      width: 92px;
+      height: 92px;
+      margin: 0 auto 20px;
+      border-radius: 28px;
+      background: linear-gradient(135deg, var(--brand-blue), var(--brand-deep) 58%, var(--brand-light));
+      box-shadow: 0 22px 45px rgba(28,41,225,.30);
+      display: grid;
+      place-items: center;
+      position: relative;
+      overflow: hidden;
+      animation: logoPulse 1.7s ease-in-out infinite;
+    }
+
+    .logo-mark::after {
+      content: "";
+      position: absolute;
+      width: 42px;
+      height: 42px;
+      border-radius: 999px;
+      right: -10px;
+      top: -12px;
+      background: rgba(255,255,255,.22);
+    }
+
+    .logo-text {
+      color: #fff;
+      font-size: 39px;
+      line-height: 1;
+      font-weight: 900;
+      letter-spacing: -2.5px;
+      transform: translateY(-2px);
+    }
+
+    .splash-title {
+      margin: 0;
+      color: var(--ink);
+      font-size: 29px;
+      font-weight: 900;
+      letter-spacing: -.8px;
+    }
+
+    .splash-subtitle {
+      margin: 8px 0 26px;
+      color: var(--muted);
+      font-size: 14px;
+      font-weight: 700;
+    }
+
+    .loader {
+      width: 42px;
+      height: 42px;
+      margin: 0 auto;
+      border-radius: 50%;
+      border: 4px solid rgba(28,41,225,.12);
+      border-top-color: var(--brand-blue);
+      animation: spin .82s linear infinite;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    @keyframes logoPulse {
+      0%, 100% { transform: translateY(0) scale(1); }
+      50% { transform: translateY(-3px) scale(1.025); }
+    }
+
+    @keyframes cardIn {
+      from { opacity: 0; transform: translateY(18px) scale(.97); }
+      to { opacity: 1; transform: translateY(0) scale(1); }
+    }
+  </style>
 </head>
 <body>
-  <!--
-    You can customize the "flutter_bootstrap.js" script.
-    This is useful to provide a custom configuration to the Flutter loader
-    or to give the user feedback during the initialization process.
+  <div id="app-splash" aria-label="A carregar Academia360">
+    <div class="splash-card">
+      <div class="logo-mark"><div class="logo-text">a.</div></div>
+      <h1 class="splash-title">Academia360</h1>
+      <p class="splash-subtitle">A carregar a plataforma académica</p>
+      <div class="loader"></div>
+    </div>
+  </div>
 
-    For more details:
-    * https://docs.flutter.dev/platform-integration/web/initialization
-  -->
+  <script>
+    window.addEventListener('flutter-first-frame', function () {
+      const splash = document.getElementById('app-splash');
+      if (splash) {
+        splash.classList.add('hidden');
+        setTimeout(() => splash.remove(), 450);
+      }
+    });
+
+    setTimeout(function () {
+      const splash = document.getElementById('app-splash');
+      if (splash) splash.classList.add('hidden');
+    }, 5000);
+  </script>
+
   <script src="flutter_bootstrap.js" async></script>
 </body>
 </html>

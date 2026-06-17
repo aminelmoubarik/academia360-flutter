@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../core/ui.dart';
+import '../main.dart';
 import '../services/api_service.dart';
 
 const _brown = Color(0xFF5C3D2E);
@@ -12,9 +13,9 @@ class ReportsScreen extends StatefulWidget {
 
 class _ReportsScreenState extends State<ReportsScreen> {
   List<Map<String, dynamic>> _report = [];
-  int _totalPunches = 0;
   bool _loading = true;
   String? _error;
+  int _totalPunches = 0;
   String _sortBy = 'name';
 
   @override
@@ -28,11 +29,16 @@ class _ReportsScreenState extends State<ReportsScreen> {
       final report = <Map<String, dynamic>>[];
       for (final s in students) {
         final records = attendance.where((a) => a['student_id'] == s['id']).toList();
+        final schedules = records
+            .map((r) => r['schedule_id'])
+            .where((id) => id != null)
+            .toSet();
         report.add({
-          'full_name': s['full_name'] ?? 'Unknown',
+          'student_id': s['id'],
+          'full_name': s['full_name'] ?? '',
           'student_number': s['student_number'] ?? '',
           'class_name': s['class_name'] ?? '',
-          'sessions': records.where((a) => a['punch_type'] == 'in').length,
+          'sessions': schedules.length,
           'punches': records.length,
         });
       }
@@ -63,21 +69,38 @@ class _ReportsScreenState extends State<ReportsScreen> {
     final zero = _report.where((r) => r['sessions'] == 0).length;
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Attendance Report'),
-        backgroundColor: _brown,
+        title: const Text('Relatório de assiduidade'),
+        backgroundColor: Colors.white,
+        foregroundColor: Brand.ink,
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(4),
+          child: Container(
+            height: 4,
+            decoration: const BoxDecoration(gradient: LinearGradient(colors: [_brown, Brand.blueLight])),
+          ),
+        ),
         actions: [
           PopupMenuButton<String>(
             icon: const Icon(Icons.sort),
+            tooltip: 'Ordenar',
             onSelected: (v) => setState(() { _sortBy = v; _sort(); }),
             itemBuilder: (_) => const [
-              PopupMenuItem(value: 'name', child: Text('Sort by name')),
-              PopupMenuItem(value: 'desc', child: Text('Most attendance first')),
-              PopupMenuItem(value: 'asc', child: Text('Least attendance first')),
+              PopupMenuItem(value: 'name', child: Text('Ordenar por nome')),
+              PopupMenuItem(value: 'desc', child: Text('Mais assiduidade primeiro')),
+              PopupMenuItem(value: 'asc', child: Text('Menos assiduidade primeiro')),
             ],
           ),
         ],
       ),
-      body: _loading ? const LoadingView()
+      body: DecoratedBox(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [Colors.white, Brand.blueSoft.withValues(alpha: 0.38), Brand.bg],
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+          ),
+        ),
+        child: _loading ? const LoadingView()
           : _error != null ? ErrorView(message: _error!, onRetry: _load)
           : Column(children: [
               Container(
@@ -86,17 +109,19 @@ class _ReportsScreenState extends State<ReportsScreen> {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceAround,
                   children: [
-                    _Stat(label: 'Students', value: '${_report.length}',
-                        color: const Color(0xFF1929E9), icon: Icons.people_outlined),
-                    _Stat(label: 'Total punches', value: '$_totalPunches',
+                    _Stat(label: 'Estudantes', value: '${_report.length}',
+                        color: Brand.blue, icon: Icons.people_outlined),
+                    _Stat(label: 'Total de picagens', value: '$_totalPunches',
                         color: const Color(0xFF0CA678), icon: Icons.fingerprint),
-                    _Stat(label: 'No attendance', value: '$zero',
+                    _Stat(label: 'Sem assiduidade', value: '$zero',
                         color: const Color(0xFFE03131), icon: Icons.warning_amber),
                   ],
                 ),
               ),
               Expanded(child: RefreshIndicator(onRefresh: _load,
-                child: ListView.separated(
+                child: _report.isEmpty
+                    ? const EmptyView(icon: Icons.bar_chart_outlined, message: 'Sem dados para relatório')
+                    : ListView.separated(
                   padding: const EdgeInsets.all(16),
                   itemCount: _report.length,
                   separatorBuilder: (_, __) => const SizedBox(height: 8),
@@ -106,12 +131,14 @@ class _ReportsScreenState extends State<ReportsScreen> {
                     final color = _c(n);
                     return Card(child: ListTile(
                       leading: CircleAvatar(
-                        backgroundColor: color.withOpacity(0.12),
+                        backgroundColor: color.withValues(alpha: 0.12),
                         child: Icon(n == 0 ? Icons.warning_amber : Icons.check_circle_outline,
                             color: color, size: 20),
                       ),
                       title: Text(r['full_name'],
-                          style: const TextStyle(fontWeight: FontWeight.w600)),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(fontWeight: FontWeight.w700)),
                       subtitle: Text([
                         if ((r['student_number'] as String).isNotEmpty) '#${r['student_number']}',
                         if ((r['class_name'] as String).isNotEmpty) r['class_name'],
@@ -120,9 +147,9 @@ class _ReportsScreenState extends State<ReportsScreen> {
                         mainAxisAlignment: MainAxisAlignment.center,
                         crossAxisAlignment: CrossAxisAlignment.end,
                         children: [
-                          Text('$n sessions',
+                          Text('$n sessões',
                               style: TextStyle(fontWeight: FontWeight.bold, color: color)),
-                          Text('${r['punches']} punches',
+                          Text('${r['punches']} picagens',
                               style: TextStyle(fontSize: 11, color: Colors.grey.shade500)),
                         ],
                       ),
@@ -131,6 +158,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
                 ),
               )),
             ]),
+      ),
     );
   }
 }

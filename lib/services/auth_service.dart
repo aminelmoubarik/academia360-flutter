@@ -29,9 +29,9 @@ class AuthService {
 
       return false;
     } on TimeoutException {
-      throw Exception('Backend timeout. The server may be starting up.');
+      throw Exception('Tempo de espera excedido. O servidor pode ainda estar a iniciar.');
     } catch (e) {
-      throw Exception('Could not connect to API: $e');
+      throw Exception('Não foi possível ligar à API: $e');
     }
   }
 

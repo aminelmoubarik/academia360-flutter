@@ -1,69 +1,61 @@
 import 'package:flutter/material.dart';
-import '../core/ui.dart';
-import '../services/api_service.dart';
+import 'crud_screen.dart';
 
-class ClassesScreen extends StatefulWidget {
+class ClassesScreen extends StatelessWidget {
   const ClassesScreen({super.key});
-  @override
-  State<ClassesScreen> createState() => _ClassesScreenState();
-}
-
-class _ClassesScreenState extends State<ClassesScreen> {
-  List<dynamic> _all = [], _filtered = [];
-  bool _loading = true;
-  String? _error;
-
-  @override
-  void initState() { super.initState(); _load(); }
-
-  Future<void> _load() async {
-    setState(() { _loading = true; _error = null; });
-    try {
-      final data = await ApiService.getClasses();
-      setState(() { _all = data; _filtered = data; _loading = false; });
-    } catch (e) { setState(() { _error = e.toString(); _loading = false; }); }
-  }
-
-  void _search(String q) {
-    final query = q.toLowerCase();
-    setState(() { _filtered = _all.where((c) =>
-      (c['name'] ?? '').toLowerCase().contains(query) ||
-      (c['course_name'] ?? '').toLowerCase().contains(query) ||
-      (c['school_year'] ?? '').toLowerCase().contains(query)).toList(); });
-  }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Classes'), backgroundColor: const Color(0xFFE8590C)),
-      body: _loading ? const LoadingView()
-          : _error != null ? ErrorView(message: _error!, onRetry: _load)
-          : Column(children: [
-              SearchBarField(hint: 'Search by name, course or year…', onChanged: _search),
-              ResultCount(count: _filtered.length, noun: 'classes'),
-              Expanded(child: RefreshIndicator(onRefresh: _load,
-                child: ListView.separated(
-                  padding: const EdgeInsets.all(16),
-                  itemCount: _filtered.length,
-                  separatorBuilder: (_, __) => const SizedBox(height: 8),
-                  itemBuilder: (_, i) {
-                    final c = _filtered[i];
-                    return Card(child: ListTile(
-                      leading: InitialAvatar(
-                        text: '${c['course_year_number'] ?? '?'}',
-                        color: const Color(0xFFE8590C),
-                      ),
-                      title: Text(c['name'] ?? 'Unknown',
-                          style: const TextStyle(fontWeight: FontWeight.w600)),
-                      subtitle: Text('${c['course_name'] ?? ''} · ${c['course_code'] ?? ''}'),
-                      trailing: c['school_year'] != null
-                          ? Tag(text: c['school_year'], color: const Color(0xFFE8590C))
-                          : null,
-                    ));
-                  },
-                ),
-              )),
-            ]),
+    return CrudScreen(
+      title: 'Turmas',
+      endpoint: '/classes',
+      icon: Icons.groups_outlined,
+      color: const Color(0xFFE8590C),
+      fields: [
+        const CrudField(
+          keyName: 'name',
+          label: 'Nome da turma',
+          required: true,
+          hint: 'Exemplo: TGEI 1A',
+        ),
+        CrudField(
+          keyName: 'course_id',
+          label: 'Curso',
+          type: CrudFieldType.select,
+          required: true,
+          optionsEndpoint: '/courses',
+          optionValue: (r) => r['id'],
+          optionLabel: (r) => '${r['code'] ?? ''} — ${r['name'] ?? ''}',
+        ),
+        CrudField(
+          keyName: 'school_year_id',
+          label: 'Ano letivo',
+          type: CrudFieldType.select,
+          required: true,
+          optionsEndpoint: '/school-years',
+          optionValue: (r) => r['id'],
+          optionLabel: (r) => r['name']?.toString() ?? 'Ano ${r['id']}',
+        ),
+        const CrudField(
+          keyName: 'course_year_number',
+          label: 'Ano do curso',
+          type: CrudFieldType.select,
+          required: true,
+          options: [
+            CrudOption(1, '1.º ano'),
+            CrudOption(2, '2.º ano'),
+            CrudOption(3, '3.º ano'),
+          ],
+        ),
+      ],
+      searchableKeys: const ['name', 'course_code', 'course_name', 'school_year'],
+      titleBuilder: (r) => r['name']?.toString() ?? 'Turma',
+      subtitleBuilder: (r) => [
+        if (r['course_code'] != null) r['course_code'],
+        if (r['course_name'] != null) r['course_name'],
+        if (r['school_year'] != null) r['school_year'],
+        if (r['course_year_number'] != null) '${r['course_year_number']}.º ano',
+      ].join(' · '),
     );
   }
 }

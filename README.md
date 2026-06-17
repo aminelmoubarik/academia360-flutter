@@ -1,17 +1,29 @@
-# academia360_app
+# Academia360 Flutter Frontend
 
-A new Flutter project.
+Frontend web/mobile em Flutter para o projeto Erasmus+ Academia360.
 
-## Getting Started
+## Funcionalidades atuais
 
-This project is a starting point for a Flutter application.
+- Início de sessão ligado ao backend FastAPI.
+- Armazenamento do token JWT.
+- Painel com navegação baseada no perfil do utilizador.
+- Ecrãs para estudantes, professores, cursos, disciplinas, turmas, salas, horários, assiduidade e relatórios.
+- Gestão de dados para admin/diretor/secretaria.
+- Área de configuração para os dados necessários à geração de horários:
+  - anos letivos,
+  - calendário escolar,
+  - disponibilidade dos professores,
+  - carga horária das disciplinas,
+  - atribuições professor-disciplina.
+- Geração automática de horários com pré-visualização, substituição de horário existente e verificação de condições.
 
-A few resources to get you started if this is your first Flutter project:
+## Executar localmente
 
-- [Learn Flutter](https://docs.flutter.dev/get-started/learn-flutter)
-- [Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Flutter learning resources](https://docs.flutter.dev/reference/learning-resources)
+```bash
+flutter pub get
+flutter run -d chrome --dart-define=API_BASE_URL=http://127.0.0.1:8000
+```
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+## Notas
+
+O gerador de horários depende dos dados do backend. Antes de gerar um horário real, confirma que a turma selecionada tem disciplinas, professores atribuídos, salas válidas, disponibilidade dos professores e dias letivos no calendário escolar.
