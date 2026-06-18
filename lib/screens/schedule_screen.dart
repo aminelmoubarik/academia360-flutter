@@ -148,7 +148,7 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                     return ListView.separated(
                     padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
                     itemCount: items.length,
-                    separatorBuilder: (_, __) => const SizedBox(height: 8),
+                    separatorBuilder: (_, _) => const SizedBox(height: 8),
                     itemBuilder: (_, i) {
                       final item = items[i];
                       if (item is String) {
@@ -290,8 +290,8 @@ class _GenerateScheduleScreenState extends State<GenerateScheduleScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Gerar horário'),
-        backgroundColor: Colors.white,
-        foregroundColor: Brand.ink,
+        backgroundColor: AppColors.of(context).surface,
+        foregroundColor: AppColors.of(context).ink,
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(4),
           child: Container(
@@ -303,7 +303,7 @@ class _GenerateScheduleScreenState extends State<GenerateScheduleScreen> {
       body: DecoratedBox(
         decoration: BoxDecoration(
           gradient: LinearGradient(
-            colors: [Colors.white, Brand.blueSoft.withValues(alpha: 0.42), Brand.bg],
+            colors: AppColors.of(context).isDark ? [AppColors.of(context).surface, AppColors.of(context).bg] : [Colors.white, Brand.blueSoft.withValues(alpha: 0.42), AppColors.of(context).bg],
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
           ),

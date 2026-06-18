@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../core/brand_logo.dart';
 import '../main.dart';
 import '../services/auth_service.dart';
 import 'home_screen.dart';
@@ -60,7 +61,7 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Brand.bg,
+      backgroundColor: AppColors.of(context).bg,
       body: LayoutBuilder(builder: (context, constraints) {
         final isWide = constraints.maxWidth >= 860;
         return Stack(
@@ -110,7 +111,7 @@ class _SoftBackground extends StatelessWidget {
     return DecoratedBox(
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          colors: [Colors.white, Brand.blueSoft.withValues(alpha: 0.8), Brand.bg],
+          colors: AppColors.of(context).isDark ? [AppColors.of(context).surface, AppColors.of(context).bg] : [Colors.white, Brand.blueSoft.withValues(alpha: 0.8), Brand.bg],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
@@ -177,29 +178,10 @@ class _BrandHero extends StatelessWidget {
                       ),
                     ],
                   ),
-                  child: const Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        'academia',
-                        style: TextStyle(
-                          color: Brand.blue,
-                          fontSize: 35,
-                          fontWeight: FontWeight.w900,
-                          letterSpacing: -1.2,
-                        ),
-                      ),
-                      Text('.', style: TextStyle(color: Brand.blue, fontSize: 35, fontWeight: FontWeight.w900)),
-                      SizedBox(width: 8),
-                      Text(
-                        '360',
-                        style: TextStyle(
-                          color: Brand.ink,
-                          fontSize: 18,
-                          fontWeight: FontWeight.w900,
-                        ),
-                      ),
-                    ],
+                  child: const AcademiaWordmark(
+                    size: 35,
+                    showSchoolText: false,
+                    show360: true,
                   ),
                 ),
                 const SizedBox(height: 16),
@@ -276,9 +258,9 @@ class _LoginCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(28),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.92),
+        color: AppColors.of(context).surface,
         borderRadius: BorderRadius.circular(28),
-        border: Border.all(color: Brand.line),
+        border: Border.all(color: AppColors.of(context).line),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.07),
@@ -295,29 +277,26 @@ class _LoginCard extends StatelessWidget {
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
               decoration: BoxDecoration(
-                color: Brand.blueSoft,
+                color: Brand.blue.withValues(alpha: AppColors.of(context).isDark ? 0.18 : 0.10),
                 borderRadius: BorderRadius.circular(999),
               ),
-              child: const Text(
-                'academia360',
-                style: TextStyle(color: Brand.blue, fontWeight: FontWeight.w900, letterSpacing: -0.3),
-              ),
+              child: const AcademiaCompactMark(size: 20),
             ),
           ),
           const SizedBox(height: 24),
-          const Text(
+          Text(
             'Bem-vindo de volta',
             style: TextStyle(
               fontSize: 29,
               fontWeight: FontWeight.w900,
-              color: Brand.ink,
+              color: AppColors.of(context).ink,
               letterSpacing: -0.5,
             ),
           ),
           const SizedBox(height: 6),
-          const Text(
+          Text(
             'Inicie sessão para continuar na plataforma.',
-            style: TextStyle(fontSize: 14, color: Brand.muted),
+            style: TextStyle(fontSize: 14, color: AppColors.of(context).muted),
           ),
           const SizedBox(height: 28),
           TextField(
@@ -382,10 +361,10 @@ class _LoginCard extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 24),
-          const Center(
+          Center(
             child: Text(
               'Academia360 · Projeto Erasmus+',
-              style: TextStyle(fontSize: 12, color: Brand.muted),
+              style: TextStyle(fontSize: 12, color: AppColors.of(context).muted),
             ),
           ),
         ],

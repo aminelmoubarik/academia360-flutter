@@ -5,35 +5,38 @@
 
   <meta charset="UTF-8">
   <meta content="IE=Edge" http-equiv="X-UA-Compatible">
-  <meta name="description" content="Academia360 - plataforma académica para gestão de utilizadores, horários e assiduidade.">
-  <meta name="theme-color" content="#1C29E1">
+  <meta name="description" content="Academia360 — plataforma académica para picagem RFID/NFC, assiduidade e geração automática de horários.">
+  <meta name="theme-color" content="#2B3AF0">
   <meta name="color-scheme" content="light">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
   <meta name="mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="Academia360">
   <link rel="apple-touch-icon" href="icons/Icon-192.png">
 
-  <link rel="icon" type="image/png" href="favicon.png"/>
-  <link rel="manifest" href="manifest.json">
+  <link rel="icon" type="image/x-icon" href="favicon.ico">
+  <link rel="icon" type="image/png" sizes="32x32" href="favicon.png">
+  <link rel="icon" type="image/png" sizes="192x192" href="icons/Icon-192.png">
 
   <title>Academia360</title>
+  <link rel="manifest" href="manifest.json">
 
   <style>
     :root {
-      --brand-blue: #1C29E1;
-      --brand-deep: #111B9F;
-      --brand-light: #6370FF;
+      --blue: #2B3AF0;
+      --deep: #111B9F;
+      --light: #6370FF;
       --ink: #11131A;
       --muted: #667085;
-      --bg: #F7F8FC;
+      --line: rgba(43,58,240,.12);
+      --bg: #F4F6FB;
     }
-
     html, body {
       height: 100%;
       margin: 0;
       background: var(--bg);
-      font-family: Inter, Roboto, Arial, sans-serif;
+      font-family: Inter, Roboto, -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
       overflow: hidden;
     }
 
@@ -44,128 +47,127 @@
       display: grid;
       place-items: center;
       background:
-        radial-gradient(circle at 20% 15%, rgba(99,112,255,.18), transparent 28%),
-        radial-gradient(circle at 85% 20%, rgba(28,41,225,.14), transparent 30%),
-        linear-gradient(135deg, #fff 0%, #eff1ff 46%, #f7f8fc 100%);
-      transition: opacity .38s ease, visibility .38s ease, transform .38s ease;
+        radial-gradient(circle at 82% 12%, rgba(43,58,240,.12), transparent 32%),
+        radial-gradient(circle at 12% 86%, rgba(99,112,255,.11), transparent 32%),
+        linear-gradient(135deg, #ffffff 0%, #F1F3FF 45%, #F7F8FC 100%);
+      transition: opacity .42s ease, visibility .42s ease;
     }
+    #app-splash.hidden { opacity: 0; visibility: hidden; pointer-events: none; }
 
-    #app-splash.hidden {
-      opacity: 0;
-      visibility: hidden;
-      transform: scale(1.02);
-      pointer-events: none;
-    }
-
-    .splash-card {
-      width: min(360px, calc(100vw - 48px));
-      padding: 36px 30px;
-      border-radius: 34px;
-      background: rgba(255,255,255,.76);
-      border: 1px solid rgba(255,255,255,.9);
-      box-shadow: 0 32px 80px rgba(17,27,159,.18);
-      backdrop-filter: blur(20px);
+    .brand-card {
+      width: min(430px, calc(100vw - 48px));
+      padding: 34px 30px 28px;
+      border-radius: 32px;
+      background: rgba(255,255,255,.88);
+      border: 1px solid var(--line);
+      box-shadow: 0 24px 60px rgba(43,58,240,.13);
       text-align: center;
-      animation: cardIn .72s cubic-bezier(.2,.9,.25,1) both;
+      animation: enter .68s cubic-bezier(.2,.8,.2,1) both;
+    }
+    @keyframes enter {
+      from { opacity: 0; transform: translateY(18px) scale(.98); }
+      to { opacity: 1; transform: translateY(0) scale(1); }
     }
 
-    .logo-mark {
-      width: 92px;
-      height: 92px;
-      margin: 0 auto 20px;
-      border-radius: 28px;
-      background: linear-gradient(135deg, var(--brand-blue), var(--brand-deep) 58%, var(--brand-light));
-      box-shadow: 0 22px 45px rgba(28,41,225,.30);
-      display: grid;
-      place-items: center;
-      position: relative;
-      overflow: hidden;
-      animation: logoPulse 1.7s ease-in-out infinite;
-    }
-
-    .logo-mark::after {
-      content: "";
-      position: absolute;
-      width: 42px;
-      height: 42px;
-      border-radius: 999px;
-      right: -10px;
-      top: -12px;
-      background: rgba(255,255,255,.22);
-    }
-
-    .logo-text {
-      color: #fff;
-      font-size: 39px;
+    .wordmark {
+      display: inline-flex;
+      align-items: center;
+      gap: 11px;
       line-height: 1;
-      font-weight: 900;
-      letter-spacing: -2.5px;
-      transform: translateY(-2px);
+      color: var(--blue);
     }
-
-    .splash-title {
-      margin: 0;
-      color: var(--ink);
-      font-size: 29px;
+    .wordmark-main {
+      font-size: clamp(36px, 9vw, 48px);
       font-weight: 900;
-      letter-spacing: -.8px;
+      letter-spacing: -2.6px;
+      color: var(--blue);
     }
-
-    .splash-subtitle {
-      margin: 8px 0 26px;
+    .wordmark-main .dot { color: var(--blue); }
+    .school-copy {
+      padding-left: 12px;
+      border-left: 2px solid rgba(17,27,159,.34);
+      text-align: left;
+      font-size: clamp(7px, 2vw, 9px);
+      line-height: 1.08;
+      font-weight: 900;
+      letter-spacing: .55px;
+      color: var(--deep);
+      max-width: 100px;
+    }
+    .product-chip {
+      display: inline-flex;
+      margin-top: 22px;
+      padding: 8px 14px;
+      border-radius: 999px;
+      background: rgba(43,58,240,.08);
+      border: 1px solid rgba(43,58,240,.12);
+      color: var(--deep);
+      font-weight: 900;
+      font-size: 12px;
+    }
+    .bar {
+      overflow: hidden;
+      width: 182px;
+      height: 4px;
+      border-radius: 999px;
+      margin: 26px auto 0;
+      background: rgba(43,58,240,.12);
+    }
+    .bar::before {
+      content: "";
+      display: block;
+      width: 42%;
+      height: 100%;
+      border-radius: inherit;
+      background: linear-gradient(90deg, var(--blue), var(--light));
+      animation: load 1.15s ease-in-out infinite;
+    }
+    @keyframes load {
+      0% { transform: translateX(-110%); }
+      55% { transform: translateX(92%); }
+      100% { transform: translateX(245%); }
+    }
+    .caption {
+      margin-top: 14px;
       color: var(--muted);
-      font-size: 14px;
+      font-size: 13px;
       font-weight: 700;
     }
-
-    .loader {
-      width: 42px;
-      height: 42px;
-      margin: 0 auto;
-      border-radius: 50%;
-      border: 4px solid rgba(28,41,225,.12);
-      border-top-color: var(--brand-blue);
-      animation: spin .82s linear infinite;
-    }
-
-    @keyframes spin { to { transform: rotate(360deg); } }
-
-    @keyframes logoPulse {
-      0%, 100% { transform: translateY(0) scale(1); }
-      50% { transform: translateY(-3px) scale(1.025); }
-    }
-
-    @keyframes cardIn {
-      from { opacity: 0; transform: translateY(18px) scale(.97); }
-      to { opacity: 1; transform: translateY(0) scale(1); }
+    .foot {
+      position: fixed;
+      bottom: 24px;
+      left: 0;
+      right: 0;
+      text-align: center;
+      font-size: 11px;
+      color: var(--muted);
+      font-weight: 700;
     }
   </style>
 </head>
 <body>
   <div id="app-splash" aria-label="A carregar Academia360">
-    <div class="splash-card">
-      <div class="logo-mark"><div class="logo-text">a.</div></div>
-      <h1 class="splash-title">Academia360</h1>
-      <p class="splash-subtitle">A carregar a plataforma académica</p>
-      <div class="loader"></div>
+    <div class="brand-card">
+      <div class="wordmark" aria-label="Academia Profissional Prof. Albino de Matos">
+        <div class="wordmark-main">academia<span class="dot">.</span></div>
+        <div class="school-copy">PROFISSIONAL<br>PROF. ALBINO<br>DE MATOS<br>ASSOCIAÇÃO</div>
+      </div>
+      <div class="product-chip">Academia360 · Picagem · Horários · Assiduidade</div>
+      <div class="bar"></div>
+      <div class="caption">A preparar a plataforma académica</div>
     </div>
+    <div class="foot">Academia Profissional Prof. Albino de Matos · Erasmus+</div>
   </div>
 
   <script>
     window.addEventListener('flutter-first-frame', function () {
-      const splash = document.getElementById('app-splash');
+      var splash = document.getElementById('app-splash');
       if (splash) {
         splash.classList.add('hidden');
-        setTimeout(() => splash.remove(), 450);
+        setTimeout(function () { splash.remove(); }, 460);
       }
     });
-
-    setTimeout(function () {
-      const splash = document.getElementById('app-splash');
-      if (splash) splash.classList.add('hidden');
-    }, 5000);
   </script>
-
   <script src="flutter_bootstrap.js" async></script>
 </body>
 </html>

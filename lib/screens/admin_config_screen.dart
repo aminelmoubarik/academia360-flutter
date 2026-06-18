@@ -210,8 +210,8 @@ class AdminConfigScreen extends StatelessWidget {
       appBar: AppBar(
         toolbarHeight: 66,
         title: const Text('Configuração'),
-        backgroundColor: Colors.white,
-        foregroundColor: Brand.ink,
+        backgroundColor: AppColors.of(context).surface,
+        foregroundColor: AppColors.of(context).ink,
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(4),
           child: Container(
@@ -223,7 +223,7 @@ class AdminConfigScreen extends StatelessWidget {
       body: DecoratedBox(
         decoration: BoxDecoration(
           gradient: LinearGradient(
-            colors: [Colors.white, Brand.blueSoft.withValues(alpha: 0.45), Brand.bg],
+            colors: AppColors.of(context).isDark ? [AppColors.of(context).surface, AppColors.of(context).bg] : [Colors.white, Brand.blueSoft.withValues(alpha: 0.42), AppColors.of(context).bg],
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
           ),
@@ -282,7 +282,7 @@ class _ConfigCard extends StatelessWidget {
           padding: const EdgeInsets.all(18),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(24),
-            border: Border.all(color: Brand.line),
+            border: Border.all(color: AppColors.of(context).line),
             boxShadow: [
               BoxShadow(color: Colors.black.withValues(alpha: 0.035), blurRadius: 20, offset: const Offset(0, 10)),
             ],
@@ -301,7 +301,7 @@ class _ConfigCard extends StatelessWidget {
               child: Icon(icon, color: Colors.white),
             ),
             const Spacer(),
-            Text(title, style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 15, color: Brand.ink, letterSpacing: -0.2)),
+            Text(title, style: TextStyle(fontWeight: FontWeight.w900, fontSize: 15, color: AppColors.of(context).ink, letterSpacing: -0.2)),
             const SizedBox(height: 4),
             Text(subtitle, maxLines: 2, overflow: TextOverflow.ellipsis, style: TextStyle(color: Colors.grey.shade600, fontSize: 12)),
           ]),

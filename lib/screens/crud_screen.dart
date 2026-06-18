@@ -274,8 +274,8 @@ class _CrudScreenState extends State<CrudScreen> {
           const SizedBox(width: 10),
           Expanded(child: Text(widget.title, maxLines: 1, overflow: TextOverflow.ellipsis)),
         ]),
-        backgroundColor: Colors.white,
-        foregroundColor: Brand.ink,
+        backgroundColor: AppColors.of(context).surface,
+        foregroundColor: AppColors.of(context).ink,
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(4),
           child: Container(
@@ -299,7 +299,11 @@ class _CrudScreenState extends State<CrudScreen> {
       body: DecoratedBox(
         decoration: BoxDecoration(
           gradient: LinearGradient(
-            colors: [Colors.white, widget.color.withValues(alpha: 0.035), Brand.bg],
+            colors: [
+              AppColors.of(context).surface,
+              widget.color.withValues(alpha: AppColors.of(context).isDark ? 0.06 : 0.035),
+              AppColors.of(context).bg,
+            ],
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
           ),
@@ -313,19 +317,20 @@ class _CrudScreenState extends State<CrudScreen> {
                     Container(
                       width: double.infinity,
                       margin: const EdgeInsets.fromLTRB(16, 16, 16, 0),
-                      padding: const EdgeInsets.all(12),
+                      padding: const EdgeInsets.all(13),
                       decoration: BoxDecoration(
-                        color: Colors.amber.shade50,
-                        borderRadius: BorderRadius.circular(10),
-                        border: Border.all(color: Colors.amber.shade200),
+                        color: Brand.warn.withValues(alpha: AppColors.of(context).isDark ? 0.16 : 0.09),
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(color: Brand.warn.withValues(alpha: 0.3)),
                       ),
                       child: Row(children: [
-                        Icon(Icons.lock_outline, size: 18, color: Colors.amber.shade800),
-                        const SizedBox(width: 8),
-                        const Expanded(
+                        const Icon(Icons.lock_outline, size: 18, color: Brand.warn),
+                        const SizedBox(width: 10),
+                        Expanded(
                           child: Text(
                             'O seu perfil tem apenas acesso de leitura.',
-                            style: TextStyle(fontWeight: FontWeight.w600),
+                            style: TextStyle(
+                                fontWeight: FontWeight.w600, color: AppColors.of(context).ink),
                           ),
                         ),
                       ]),
@@ -343,7 +348,7 @@ class _CrudScreenState extends State<CrudScreen> {
                             child: ListView.separated(
                               padding: const EdgeInsets.fromLTRB(16, 8, 16, 96),
                               itemCount: _filtered.length,
-                              separatorBuilder: (_, __) => const SizedBox(height: 8),
+                              separatorBuilder: (_, _) => const SizedBox(height: 8),
                               itemBuilder: (_, i) {
                                 final record = Map<String, dynamic>.from(_filtered[i] as Map);
                                 final delay = Duration(milliseconds: (i % 10) * 28);
@@ -361,50 +366,22 @@ class _CrudScreenState extends State<CrudScreen> {
                                       ),
                                     );
                                   },
-                                  child: Card(
-                                    clipBehavior: Clip.antiAlias,
-                                    elevation: 0,
-                                    shadowColor: Colors.black12,
-                                    child: Container(
-                                      decoration: BoxDecoration(
-                                        color: Colors.white,
-                                        borderRadius: BorderRadius.circular(22),
-                                        boxShadow: [
-                                          BoxShadow(
-                                            color: widget.color.withValues(alpha: 0.035),
-                                            blurRadius: 22,
-                                            offset: const Offset(0, 10),
-                                          ),
-                                        ],
-                                      ),
-                                      child: ListTile(
-                                        minVerticalPadding: 14,
-                                        leading: InitialAvatar(
-                                          text: widget.titleBuilder(record),
-                                          color: widget.color,
-                                        ),
-                                        title: Text(
-                                          widget.titleBuilder(record),
-                                          maxLines: 1,
-                                          overflow: TextOverflow.ellipsis,
-                                          style: const TextStyle(fontWeight: FontWeight.w800),
-                                        ),
-                                        subtitle: Text(
-                                          widget.subtitleBuilder(record),
-                                          maxLines: 2,
-                                          overflow: TextOverflow.ellipsis,
-                                        ),
-                                        trailing: _canManage
-                                            ? _RowActions(
-                                                color: widget.color,
-                                                canUpdate: widget.canUpdate,
-                                                canDelete: _canDeleteRecord(record),
-                                                onEdit: () => _openForm(record),
-                                                onDelete: () => _delete(record),
-                                              )
-                                            : null,
-                                      ),
-                                    ),
+                                  child: _RecordTile(
+                                    color: widget.color,
+                                    title: widget.titleBuilder(record),
+                                    subtitle: widget.subtitleBuilder(record),
+                                    trailing: _canManage
+                                        ? _RowActions(
+                                            color: widget.color,
+                                            canUpdate: widget.canUpdate,
+                                            canDelete: _canDeleteRecord(record),
+                                            onEdit: () => _openForm(record),
+                                            onDelete: () => _delete(record),
+                                          )
+                                        : null,
+                                    onTap: _canManage && widget.canUpdate
+                                        ? () => _openForm(record)
+                                        : null,
                                   ),
                                 );
                               },
@@ -412,6 +389,84 @@ class _CrudScreenState extends State<CrudScreen> {
                           ),
                   ),
                 ]),
+      ),
+    );
+  }
+}
+
+/// Cartão de registo adaptado ao tema, com hover e toque.
+class _RecordTile extends StatefulWidget {
+  final Color color;
+  final String title;
+  final String subtitle;
+  final Widget? trailing;
+  final VoidCallback? onTap;
+  const _RecordTile({
+    required this.color,
+    required this.title,
+    required this.subtitle,
+    this.trailing,
+    this.onTap,
+  });
+
+  @override
+  State<_RecordTile> createState() => _RecordTileState();
+}
+
+class _RecordTileState extends State<_RecordTile> {
+  bool _hover = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final c = AppColors.of(context);
+    return MouseRegion(
+      onEnter: (_) => setState(() => _hover = true),
+      onExit: (_) => setState(() => _hover = false),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 160),
+        decoration: BoxDecoration(
+          color: c.surface,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: _hover ? widget.color.withValues(alpha: 0.45) : c.line),
+          boxShadow: _hover
+              ? [BoxShadow(color: widget.color.withValues(alpha: 0.14), blurRadius: 18, offset: const Offset(0, 7))]
+              : const [],
+        ),
+        clipBehavior: Clip.antiAlias,
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            onTap: widget.onTap,
+            borderRadius: BorderRadius.circular(20),
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(14, 12, 8, 12),
+              child: Row(children: [
+                InitialAvatar(text: widget.title, color: widget.color),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(widget.title,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(fontWeight: FontWeight.w800, fontSize: 15, color: c.ink)),
+                      if (widget.subtitle.trim().isNotEmpty) ...[
+                        const SizedBox(height: 3),
+                        Text(widget.subtitle,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(fontSize: 12.5, color: c.muted, height: 1.25)),
+                      ],
+                    ],
+                  ),
+                ),
+                if (widget.trailing != null) widget.trailing!,
+              ]),
+            ),
+          ),
+        ),
       ),
     );
   }
@@ -675,7 +730,7 @@ class _CrudFormDialogState extends State<_CrudFormDialog> {
     return AlertDialog(
       titlePadding: const EdgeInsets.fromLTRB(24, 24, 24, 0),
       contentPadding: const EdgeInsets.fromLTRB(24, 16, 24, 0),
-      backgroundColor: Colors.white,
+      backgroundColor: AppColors.of(context).surface,
       surfaceTintColor: Colors.transparent,
       title: Row(
         children: [
@@ -696,7 +751,7 @@ class _CrudFormDialogState extends State<_CrudFormDialog> {
           Expanded(
             child: Text(
               widget.title,
-              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w900, color: Brand.ink),
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900, color: AppColors.of(context).ink),
             ),
           ),
         ],

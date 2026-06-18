@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../core/ui.dart';
 import '../main.dart';
 import '../services/api_service.dart';
+import 'attendance_punch_screen.dart';
 
 class AttendanceScreen extends StatefulWidget {
   const AttendanceScreen({super.key});
@@ -46,8 +47,17 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Assiduidade'),
-        backgroundColor: Colors.white,
-        foregroundColor: Brand.ink,
+        actions: [
+          FilledButton.icon(
+            style: FilledButton.styleFrom(padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9)),
+            onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const AttendancePunchScreen())).then((_) => _load()),
+            icon: const Icon(Icons.contactless_outlined, size: 18),
+            label: const Text('Picagem'),
+          ),
+          const SizedBox(width: 10),
+        ],
+        backgroundColor: AppColors.of(context).surface,
+        foregroundColor: AppColors.of(context).ink,
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(4),
           child: Container(
@@ -61,7 +71,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
       body: DecoratedBox(
         decoration: BoxDecoration(
           gradient: LinearGradient(
-            colors: [Colors.white, Brand.blueSoft.withValues(alpha: 0.38), Brand.bg],
+            colors: AppColors.of(context).isDark ? [AppColors.of(context).surface, AppColors.of(context).bg] : [Colors.white, Brand.blueSoft.withValues(alpha: 0.42), AppColors.of(context).bg],
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
           ),
@@ -77,7 +87,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                     : ListView.separated(
                   padding: const EdgeInsets.all(16),
                   itemCount: _filtered.length,
-                  separatorBuilder: (_, __) => const SizedBox(height: 8),
+                  separatorBuilder: (_, _) => const SizedBox(height: 8),
                   itemBuilder: (_, i) {
                     final r = _filtered[i];
                     final isIn = r['punch_type'] == 'in';

@@ -155,6 +155,70 @@ class ApiService {
   static Future<List<dynamic>> getCourses() => _getList('/courses');
   static Future<List<dynamic>> getUsers() => _getList('/users');
   static Future<List<dynamic>> getAttendance() => _getList('/attendance');
+  static Future<List<dynamic>> getJustifications() => _getList('/attendance-justifications');
+
+
+  static Future<Map<String, dynamic>> punchAttendance({
+    required String cardUid,
+    String punchMethod = 'nfc',
+    String? punchType,
+    String? punchTime,
+    bool isSynced = true,
+  }) async {
+    try {
+      final headers = await _authHeaders();
+      final payload = <String, dynamic>{
+        'card_uid': cardUid,
+        'punch_method': punchMethod,
+        'is_synced': isSynced,
+      };
+      if (punchType != null) payload['punch_type'] = punchType;
+      if (punchTime != null) payload['punch_time'] = punchTime;
+
+      final response = await http
+          .post(
+            Uri.parse('${ApiConstants.baseUrl}/attendance/punch'),
+            headers: headers,
+            body: jsonEncode(payload),
+          )
+          .timeout(_timeout);
+      if (response.statusCode >= 200 && response.statusCode < 300) {
+        return jsonDecode(response.body) as Map<String, dynamic>;
+      }
+      throw ApiException(_messageFromResponse(response));
+    } on TimeoutException {
+      throw ApiException('O servidor não está a responder. A picagem pode ser guardada offline.');
+    } on http.ClientException {
+      throw ApiException('Não foi possível contactar o servidor. A picagem pode ser guardada offline.');
+    }
+  }
+
+  static Future<Map<String, dynamic>> syncOfflineAttendance(List<Map<String, dynamic>> records) async {
+    try {
+      final headers = await _authHeaders();
+      final response = await http
+          .post(
+            Uri.parse('${ApiConstants.baseUrl}/attendance/offline-sync'),
+            headers: headers,
+            body: jsonEncode({'records': records}),
+          )
+          .timeout(_timeout);
+      if (response.statusCode >= 200 && response.statusCode < 300) {
+        return jsonDecode(response.body) as Map<String, dynamic>;
+      }
+      throw ApiException(_messageFromResponse(response));
+    } on TimeoutException {
+      throw ApiException('A sincronização demorou demasiado.');
+    }
+  }
+
+  static Future<Map<String, dynamic>> getAttendanceDashboard({String? date, int? classId}) async {
+    final query = <String>[];
+    if (date != null) query.add('target_date=$date');
+    if (classId != null) query.add('class_id=$classId');
+    final suffix = query.isEmpty ? '' : '?${query.join('&')}';
+    return _getMap('/attendance/dashboard$suffix');
+  }
   static Future<List<dynamic>> getScheduleByClass(int classId) =>
       _getList('/schedule/class/$classId');
 

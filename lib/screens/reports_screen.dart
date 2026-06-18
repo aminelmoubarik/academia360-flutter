@@ -70,8 +70,8 @@ class _ReportsScreenState extends State<ReportsScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Relatório de assiduidade'),
-        backgroundColor: Colors.white,
-        foregroundColor: Brand.ink,
+        backgroundColor: AppColors.of(context).surface,
+        foregroundColor: AppColors.of(context).ink,
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(4),
           child: Container(
@@ -95,7 +95,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
       body: DecoratedBox(
         decoration: BoxDecoration(
           gradient: LinearGradient(
-            colors: [Colors.white, Brand.blueSoft.withValues(alpha: 0.38), Brand.bg],
+            colors: AppColors.of(context).isDark ? [AppColors.of(context).surface, AppColors.of(context).bg] : [Colors.white, Brand.blueSoft.withValues(alpha: 0.42), AppColors.of(context).bg],
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
           ),
@@ -124,7 +124,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
                     : ListView.separated(
                   padding: const EdgeInsets.all(16),
                   itemCount: _report.length,
-                  separatorBuilder: (_, __) => const SizedBox(height: 8),
+                  separatorBuilder: (_, _) => const SizedBox(height: 8),
                   itemBuilder: (_, i) {
                     final r = _report[i];
                     final n = r['sessions'] as int;
