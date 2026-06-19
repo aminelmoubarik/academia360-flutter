@@ -150,3 +150,21 @@ Browser camera permission is required when running on Flutter Web. Android/iOS c
 ## Step 11 - Attendance Report Export
 
 The attendance screen can now export the filtered register list to PDF or Excel. The export respects the active filters and search text, allowing the school to generate reports by date range, class, discipline, punch type, method and sync status.
+
+
+## Step 12 - Audit Logs
+
+The platform now includes a security and operational audit trail. Admin and Director users can review critical actions such as logins, failed login attempts, attendance punches, offline synchronisation, absence justification reviews, user management and schedule generation/approval decisions.
+
+Backend additions:
+
+- `GET /audit-logs`
+- `GET /audit-logs/summary`
+- `database/migration_audit_logs.sql`
+
+Frontend additions:
+
+- New `Auditoria` screen available from the sidebar for Admin and Director roles.
+- Filters by date, module, action and search text.
+
+Before using the screen on an existing database, run the audit migration.

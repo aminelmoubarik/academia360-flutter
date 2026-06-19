@@ -54,6 +54,7 @@ class AppPermissions {
   static bool canManageAcademicCatalog(String? role) => isAdmin(role);
   static bool canManageConfiguration(String? role) => isAdmin(role);
   static bool canManageUsers(String? role) => isAdmin(role);
+  static bool canViewAuditLogs(String? role) => isAdmin(role) || isDirector(role);
 
   static bool canOpenFeature(String? role, String key) {
     switch (key) {
@@ -85,6 +86,8 @@ class AppPermissions {
         return canManageConfiguration(role);
       case 'users':
         return canManageUsers(role);
+      case 'audit_logs':
+        return canViewAuditLogs(role);
       default:
         return false;
     }

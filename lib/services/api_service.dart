@@ -421,6 +421,32 @@ class ApiService {
     }
   }
 
+  static Future<List<dynamic>> getAuditLogs({
+    String? startDate,
+    String? endDate,
+    String? module,
+    String? action,
+    int? userId,
+    String? search,
+    int limit = 300,
+  }) {
+    final query = <String, String>{
+      'limit': limit.toString(),
+      if (startDate != null && startDate.trim().isNotEmpty) 'start_date': startDate.trim(),
+      if (endDate != null && endDate.trim().isNotEmpty) 'end_date': endDate.trim(),
+      if (module != null && module.trim().isNotEmpty) 'module': module.trim(),
+      if (action != null && action.trim().isNotEmpty) 'action': action.trim(),
+      if (userId != null) 'user_id': userId.toString(),
+      if (search != null && search.trim().isNotEmpty) 'search': search.trim(),
+    };
+    final suffix = query.isEmpty ? '' : '?${Uri(queryParameters: query).query}';
+    return _getList('/audit-logs$suffix');
+  }
+
+  static Future<Map<String, dynamic>> getAuditSummary({int days = 7}) =>
+      _getMap('/audit-logs/summary?days=$days');
+
+
   static Future<List<dynamic>> getScheduleByClass(int classId) =>
       _getList('/schedule/class/$classId');
 

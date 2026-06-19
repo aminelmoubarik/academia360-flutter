@@ -10,6 +10,7 @@ import '../services/auth_service.dart';
 import 'admin_config_screen.dart';
 import 'attendance_punch_screen.dart';
 import 'attendance_screen.dart';
+import 'audit_logs_screen.dart';
 import 'classes_screen.dart';
 import 'courses_screen.dart';
 import 'disciplines_screen.dart';
@@ -103,6 +104,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       'justifications' => const JustificationsScreen(),
       'classes' => const ClassesScreen(),
       'users' => const UsersScreen(),
+      'audit_logs' => const AuditLogsScreen(),
       'courses' => const CoursesScreen(),
       'reports' => const ReportsScreen(),
       'configuration' => const AdminConfigScreen(),
@@ -278,6 +280,7 @@ List<_NavSection> _navSectionsForRole(String role) {
     ]),
     section('Administração', [
       _NavItem('users', 'Utilizadores', Icons.manage_accounts_outlined, const Color(0xFF7C8698)),
+      _NavItem('audit_logs', 'Auditoria', Icons.security_outlined, Brand.violet),
     ]),
   ];
 
@@ -716,6 +719,7 @@ class _ProjectMap extends StatelessWidget {
         _MapLink('Justificações', 'justifications'),
         _MapLink('Aprovação de horários', 'schedule_approval'),
         _MapLink('Utilizadores', 'users'),
+        _MapLink('Auditoria', 'audit_logs'),
       ]),
     ];
 
