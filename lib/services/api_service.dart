@@ -156,7 +156,31 @@ class ApiService {
   static Future<List<dynamic>> getClasses() => _getList('/classes');
   static Future<List<dynamic>> getCourses() => _getList('/courses');
   static Future<List<dynamic>> getUsers() => _getList('/users');
-  static Future<List<dynamic>> getAttendance() => _getList('/attendance');
+  static Future<List<dynamic>> getAttendance({
+    String? startDate,
+    String? endDate,
+    int? classId,
+    int? studentId,
+    int? disciplineId,
+    String? punchType,
+    String? punchMethod,
+    bool? isSynced,
+    int limit = 300,
+  }) {
+    final query = <String, String>{
+      'limit': limit.toString(),
+      if (startDate != null) 'start_date': startDate,
+      if (endDate != null) 'end_date': endDate,
+      if (classId != null) 'class_id': classId.toString(),
+      if (studentId != null) 'student_id': studentId.toString(),
+      if (disciplineId != null) 'discipline_id': disciplineId.toString(),
+      if (punchType != null) 'punch_type': punchType,
+      if (punchMethod != null) 'punch_method': punchMethod,
+      if (isSynced != null) 'is_synced': isSynced.toString(),
+    };
+    final suffix = query.isEmpty ? '' : '?${Uri(queryParameters: query).query}';
+    return _getList('/attendance$suffix');
+  }
   static Future<List<dynamic>> getJustifications() => _getList('/attendance-justifications');
 
 
@@ -214,12 +238,34 @@ class ApiService {
     }
   }
 
-  static Future<Map<String, dynamic>> getAttendanceDashboard({String? date, int? classId}) async {
-    final query = <String>[];
-    if (date != null) query.add('target_date=$date');
-    if (classId != null) query.add('class_id=$classId');
-    final suffix = query.isEmpty ? '' : '?${query.join('&')}';
+  static Future<Map<String, dynamic>> getAttendanceDashboard({
+    String? date,
+    int? classId,
+    int? disciplineId,
+  }) async {
+    final query = <String, String>{
+      if (date != null) 'target_date': date,
+      if (classId != null) 'class_id': classId.toString(),
+      if (disciplineId != null) 'discipline_id': disciplineId.toString(),
+    };
+    final suffix = query.isEmpty ? '' : '?${Uri(queryParameters: query).query}';
     return _getMap('/attendance/dashboard$suffix');
+  }
+
+  static Future<Map<String, dynamic>> getAttendanceAlerts({
+    String? date,
+    int? classId,
+    int? disciplineId,
+    int days = 7,
+  }) async {
+    final query = <String, String>{
+      'days': days.toString(),
+      if (date != null) 'target_date': date,
+      if (classId != null) 'class_id': classId.toString(),
+      if (disciplineId != null) 'discipline_id': disciplineId.toString(),
+    };
+    final suffix = '?${Uri(queryParameters: query).query}';
+    return _getMap('/attendance/alerts$suffix');
   }
   static Future<List<dynamic>> getPendingScheduleApprovals() =>
       _getList('/schedule/pending-approval');

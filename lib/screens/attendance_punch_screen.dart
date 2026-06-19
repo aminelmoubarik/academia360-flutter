@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
@@ -20,21 +21,26 @@ class _AttendancePunchScreenState extends State<AttendancePunchScreen> {
   String _method = 'nfc';
   String _punchType = 'auto';
   bool _submitting = false;
+  bool _syncingQueue = false;
   bool _loadingDashboard = true;
   String? _error;
   Map<String, dynamic>? _lastResult;
   Map<String, dynamic>? _dashboard;
   List<Map<String, dynamic>> _offlineQueue = [];
+  Timer? _autoSyncTimer;
+  String? _syncStatus;
 
   @override
   void initState() {
     super.initState();
-    _loadAll();
+    _loadAll().then((_) => _tryAutoSync());
+    _autoSyncTimer = Timer.periodic(const Duration(seconds: 35), (_) => _tryAutoSync());
     WidgetsBinding.instance.addPostFrameCallback((_) => _focusNode.requestFocus());
   }
 
   @override
   void dispose() {
+    _autoSyncTimer?.cancel();
     _codeController.dispose();
     _focusNode.dispose();
     super.dispose();
@@ -73,8 +79,9 @@ class _AttendancePunchScreenState extends State<AttendancePunchScreen> {
     try {
       final decoded = jsonDecode(raw);
       if (decoded is List) {
+        if (!mounted) return;
         setState(() {
-          _offlineQueue = decoded.whereType<Map>().map((e) => Map<String, dynamic>.from(e)).toList();
+          _offlineQueue = decoded.whereType<Map>().map((e) => _normaliseOfflineRecord(Map<String, dynamic>.from(e))).toList();
         });
       }
     } catch (_) {}
@@ -88,6 +95,27 @@ class _AttendancePunchScreenState extends State<AttendancePunchScreen> {
     }
   }
 
+
+  Map<String, dynamic> _normaliseOfflineRecord(Map<String, dynamic> record) {
+    final now = DateTime.now().toIso8601String();
+    return {
+      'local_id': record['local_id']?.toString() ?? 'local_${DateTime.now().microsecondsSinceEpoch}',
+      'card_uid': record['card_uid']?.toString() ?? '',
+      'punch_method': record['punch_method']?.toString() ?? 'nfc',
+      'punch_time': record['punch_time']?.toString() ?? now,
+      if (record['punch_type'] != null) 'punch_type': record['punch_type'],
+      'queued_at': record['queued_at']?.toString() ?? now,
+      'attempts': record['attempts'] is int ? record['attempts'] : int.tryParse(record['attempts']?.toString() ?? '0') ?? 0,
+      'last_error': record['last_error']?.toString(),
+      'last_sync_attempt': record['last_sync_attempt']?.toString(),
+    };
+  }
+
+  Future<void> _tryAutoSync() async {
+    if (!mounted || _offlineQueue.isEmpty || _submitting || _syncingQueue) return;
+    await _syncQueue(auto: true);
+  }
+
   Future<void> _registerPunch({bool forceOffline = false}) async {
     final code = _codeController.text.trim();
     if (code.isEmpty) {
@@ -96,12 +124,12 @@ class _AttendancePunchScreenState extends State<AttendancePunchScreen> {
       return;
     }
 
-    final offlineRecord = <String, dynamic>{
+    final offlineRecord = _normaliseOfflineRecord(<String, dynamic>{
       'card_uid': code,
       'punch_method': _method,
       'punch_time': DateTime.now().toIso8601String(),
       if (_punchType != 'auto') 'punch_type': _punchType,
-    };
+    });
 
     if (forceOffline) {
       await _addOfflineRecord(offlineRecord);
@@ -151,7 +179,10 @@ class _AttendancePunchScreenState extends State<AttendancePunchScreen> {
   }
 
   Future<void> _addOfflineRecord(Map<String, dynamic> record, {bool silent = false}) async {
-    setState(() => _offlineQueue = [..._offlineQueue, record]);
+    setState(() {
+      _syncStatus = 'Picagem guardada localmente. Será sincronizada automaticamente.';
+      _offlineQueue = [..._offlineQueue, _normaliseOfflineRecord(record)];
+    });
     await _saveQueue();
     _codeController.clear();
     if (!silent && mounted) {
@@ -160,27 +191,91 @@ class _AttendancePunchScreenState extends State<AttendancePunchScreen> {
     _focusNode.requestFocus();
   }
 
-  Future<void> _syncQueue() async {
-    if (_offlineQueue.isEmpty) return;
-    setState(() => _submitting = true);
+  Future<void> _syncQueue({bool auto = false}) async {
+    if (_offlineQueue.isEmpty || _syncingQueue) return;
+    setState(() {
+      _syncingQueue = true;
+      if (!auto) _submitting = true;
+      _syncStatus = auto ? 'A tentar sincronizar picagens offline…' : 'Sincronização em curso…';
+    });
+
     try {
-      final result = await ApiService.syncOfflineAttendance(_offlineQueue);
+      final snapshot = List<Map<String, dynamic>>.from(_offlineQueue);
+      final result = await ApiService.syncOfflineAttendance(snapshot);
       if (!mounted) return;
-      final success = result['success'] == true;
-      if (success) {
-        setState(() => _offlineQueue = []);
-        await _saveQueue();
-        if (!mounted) return;
-        AppFeedback.success(context, 'Picagens offline sincronizadas com sucesso.');
+
+      final synced = (result['synced'] as List? ?? const [])
+          .whereType<Map>()
+          .map((e) => e['index'])
+          .whereType<int>()
+          .toSet();
+      final failed = (result['failed'] as List? ?? const []).whereType<Map>().toList();
+      final failedByIndex = <int, String>{
+        for (final item in failed)
+          if (item['index'] is int) item['index'] as int: item['error']?.toString() ?? 'Erro desconhecido',
+      };
+
+      final now = DateTime.now().toIso8601String();
+      final remaining = <Map<String, dynamic>>[];
+      for (var i = 0; i < snapshot.length; i++) {
+        if (synced.contains(i)) continue;
+        final record = _normaliseOfflineRecord(snapshot[i]);
+        record['attempts'] = (record['attempts'] as int) + 1;
+        record['last_sync_attempt'] = now;
+        record['last_error'] = failedByIndex[i] ?? 'Ainda não sincronizado';
+        remaining.add(record);
+      }
+
+      setState(() {
+        _offlineQueue = remaining;
+        if (remaining.isEmpty) {
+          _syncStatus = 'Todas as picagens offline foram sincronizadas.';
+        } else if (synced.isNotEmpty) {
+          _syncStatus = '${synced.length} sincronizadas, ${remaining.length} ainda pendentes.';
+        } else {
+          _syncStatus = 'Não foi possível sincronizar a fila offline.';
+        }
+      });
+      await _saveQueue();
+
+      if (!mounted) return;
+      if (remaining.isEmpty) {
+        if (!auto) AppFeedback.success(context, 'Picagens offline sincronizadas com sucesso.');
         await _loadDashboard();
-      } else {
-        AppFeedback.error(context, 'Algumas picagens não foram sincronizadas. Verifique os cartões.');
+      } else if (!auto) {
+        AppFeedback.error(context, 'Algumas picagens continuam pendentes. Verifique os cartões.');
       }
     } catch (e) {
-      if (mounted) AppFeedback.error(context, e.toString());
+      if (!mounted) return;
+      final now = DateTime.now().toIso8601String();
+      setState(() {
+        _syncStatus = 'Backend indisponível. A fila offline será tentada novamente.';
+        _offlineQueue = _offlineQueue.map((record) {
+          final item = _normaliseOfflineRecord(record);
+          item['attempts'] = (item['attempts'] as int) + 1;
+          item['last_sync_attempt'] = now;
+          item['last_error'] = e.toString();
+          return item;
+        }).toList();
+      });
+      await _saveQueue();
+      if (!auto && mounted) AppFeedback.error(context, e.toString());
     } finally {
-      if (mounted) setState(() => _submitting = false);
+      if (mounted) {
+        setState(() {
+          _syncingQueue = false;
+          _submitting = false;
+        });
+      }
     }
+  }
+
+  Future<void> _discardOfflineRecord(String localId) async {
+    setState(() {
+      _offlineQueue = _offlineQueue.where((record) => record['local_id']?.toString() != localId).toList();
+      _syncStatus = 'Registo offline removido da fila local.';
+    });
+    await _saveQueue();
   }
 
   String _successMessage(Map<String, dynamic> result) {
@@ -227,7 +322,7 @@ class _AttendancePunchScreenState extends State<AttendancePunchScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _PunchHero(queueCount: _offlineQueue.length, onSync: _syncQueue),
+              _PunchHero(queueCount: _offlineQueue.length, syncing: _syncingQueue, onSync: () => _syncQueue()),
               const SizedBox(height: 18),
               LayoutBuilder(builder: (context, constraints) {
                 final wide = constraints.maxWidth >= 960;
@@ -249,7 +344,10 @@ class _AttendancePunchScreenState extends State<AttendancePunchScreen> {
                   lastResult: _lastResult,
                   offlineQueue: _offlineQueue,
                   onRetry: _loadDashboard,
-                  onSync: _syncQueue,
+                  syncingQueue: _syncingQueue,
+                  syncStatus: _syncStatus,
+                  onSync: () => _syncQueue(),
+                  onDiscardOffline: _discardOfflineRecord,
                 );
                 if (!wide) {
                   return Column(children: [form, const SizedBox(height: 16), status]);
@@ -273,8 +371,9 @@ class _AttendancePunchScreenState extends State<AttendancePunchScreen> {
 
 class _PunchHero extends StatelessWidget {
   final int queueCount;
+  final bool syncing;
   final VoidCallback onSync;
-  const _PunchHero({required this.queueCount, required this.onSync});
+  const _PunchHero({required this.queueCount, required this.syncing, required this.onSync});
 
   @override
   Widget build(BuildContext context) {
@@ -323,9 +422,11 @@ class _PunchHero extends StatelessWidget {
               const SizedBox(width: 12),
               FilledButton.icon(
                 style: FilledButton.styleFrom(backgroundColor: Colors.white, foregroundColor: Brand.blue),
-                onPressed: onSync,
-                icon: const Icon(Icons.cloud_sync_outlined),
-                label: Text('Sincronizar $queueCount'),
+                onPressed: syncing ? null : onSync,
+                icon: syncing
+                    ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2))
+                    : const Icon(Icons.cloud_sync_outlined),
+                label: Text(syncing ? 'A sincronizar…' : 'Sincronizar $queueCount'),
               ),
             ],
           ]),
@@ -461,7 +562,10 @@ class _StatusPanel extends StatelessWidget {
   final Map<String, dynamic>? lastResult;
   final List<Map<String, dynamic>> offlineQueue;
   final VoidCallback onRetry;
+  final bool syncingQueue;
+  final String? syncStatus;
   final VoidCallback onSync;
+  final ValueChanged<String> onDiscardOffline;
 
   const _StatusPanel({
     required this.loading,
@@ -470,7 +574,10 @@ class _StatusPanel extends StatelessWidget {
     required this.lastResult,
     required this.offlineQueue,
     required this.onRetry,
+    required this.syncingQueue,
+    required this.syncStatus,
     required this.onSync,
+    required this.onDiscardOffline,
   });
 
   @override
@@ -500,16 +607,16 @@ class _StatusPanel extends StatelessWidget {
         Expanded(child: _MiniMetric(label: 'Alertas', value: '$absent', icon: Icons.warning_amber_outlined, color: Brand.warn)),
       ]),
       const SizedBox(height: 12),
-      if (offlineQueue.isNotEmpty)
-        Card(
-          child: ListTile(
-            leading: const Icon(Icons.cloud_off_outlined, color: Brand.warn),
-            title: Text('${offlineQueue.length} picagens offline', style: TextStyle(fontWeight: FontWeight.w900, color: c.ink)),
-            subtitle: Text('Sincronize quando o backend estiver disponível.', style: TextStyle(color: c.muted)),
-            trailing: FilledButton(onPressed: onSync, child: const Text('Sincronizar')),
-          ),
+      if (offlineQueue.isNotEmpty || syncStatus != null) ...[
+        _OfflineQueueCard(
+          records: offlineQueue,
+          status: syncStatus,
+          syncing: syncingQueue,
+          onSync: onSync,
+          onDiscard: onDiscardOffline,
         ),
-      const SizedBox(height: 12),
+        const SizedBox(height: 12),
+      ],
       Card(
         child: Padding(
           padding: const EdgeInsets.all(16),
@@ -605,6 +712,100 @@ class _LastPunchCard extends StatelessWidget {
             ]),
           ),
           Text(_formatPunchDate(result['punch_time']), style: TextStyle(color: c.muted, fontWeight: FontWeight.w800)),
+        ]),
+      ),
+    );
+  }
+}
+
+
+class _OfflineQueueCard extends StatelessWidget {
+  final List<Map<String, dynamic>> records;
+  final String? status;
+  final bool syncing;
+  final VoidCallback onSync;
+  final ValueChanged<String> onDiscard;
+
+  const _OfflineQueueCard({
+    required this.records,
+    required this.status,
+    required this.syncing,
+    required this.onSync,
+    required this.onDiscard,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final c = AppColors.of(context);
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Row(children: [
+            const Icon(Icons.cloud_sync_outlined, color: Brand.warn),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                records.isEmpty ? 'Fila offline sincronizada' : '${records.length} picagens na fila offline',
+                style: TextStyle(fontWeight: FontWeight.w900, color: c.ink),
+              ),
+            ),
+            if (records.isNotEmpty)
+              FilledButton.icon(
+                onPressed: syncing ? null : onSync,
+                icon: syncing
+                    ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                    : const Icon(Icons.cloud_upload_outlined),
+                label: Text(syncing ? 'A sincronizar' : 'Sincronizar'),
+              ),
+          ]),
+          if (status != null) ...[
+            const SizedBox(height: 8),
+            Text(status!, style: TextStyle(color: c.muted, fontSize: 12.5, height: 1.35)),
+          ],
+          if (records.isNotEmpty) ...[
+            const SizedBox(height: 12),
+            for (final record in records.take(4))
+              Container(
+                margin: const EdgeInsets.only(bottom: 8),
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: Brand.warn.withValues(alpha: c.isDark ? 0.14 : 0.07),
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(color: Brand.warn.withValues(alpha: 0.18)),
+                ),
+                child: Row(children: [
+                  const Icon(Icons.schedule_outlined, color: Brand.warn, size: 19),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                      Text(
+                        '${record['card_uid'] ?? ''} · ${(record['punch_method'] ?? '').toString().toUpperCase()}',
+                        style: TextStyle(color: c.ink, fontWeight: FontWeight.w800),
+                      ),
+                      Text(
+                        '${_formatPunchDate(record['punch_time'])} · tentativas: ${record['attempts'] ?? 0}',
+                        style: TextStyle(color: c.muted, fontSize: 11.5),
+                      ),
+                      if (record['last_error'] != null)
+                        Text(
+                          record['last_error'].toString(),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(color: Brand.danger, fontSize: 11.5),
+                        ),
+                    ]),
+                  ),
+                  IconButton(
+                    tooltip: 'Remover da fila local',
+                    onPressed: syncing ? null : () => onDiscard(record['local_id']?.toString() ?? ''),
+                    icon: const Icon(Icons.delete_outline),
+                  ),
+                ]),
+              ),
+            if (records.length > 4)
+              Text('+${records.length - 4} registos pendentes', style: TextStyle(color: c.muted, fontSize: 12)),
+          ],
         ]),
       ),
     );

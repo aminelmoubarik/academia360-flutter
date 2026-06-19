@@ -25,7 +25,7 @@ The app is connected to the Academia360 FastAPI backend.
 - Academia-branded splash screen and favicon.
 - Administrative dashboard with quick actions, grouped submenus and project map.
 - Attendance punching screen.
-- Attendance dashboard and absenteeism indicators.
+- Attendance dashboard, advanced filters and absenteeism indicators.
 - Offline attendance queue with later synchronization.
 - CRUD screens for:
   - users,
@@ -122,3 +122,22 @@ Backend authorization still remains the source of truth; hiding UI actions is on
 - More advanced offline storage using Hive or Isar.
 - Automatic sync on reconnection.
 - Attendance report export UI.
+
+
+## Step 8 - Attendance Alerts
+
+The attendance screen includes an absenteeism alert panel with students missing an entry punch, recurrent absences over the recent period and class-level alert summaries. The filter controls were also adjusted to avoid visual overflow on wide web screens.
+
+## Step 9 - Improved Offline Attendance Queue
+
+The attendance punching screen now keeps richer local queue metadata for offline records:
+
+- local queue identifier,
+- queued timestamp,
+- sync attempt counter,
+- last sync attempt timestamp,
+- last sync error message,
+- automatic retry while the terminal screen is open,
+- manual discard for invalid local records.
+
+This improves the offline workflow requested in the project brief while keeping the implementation compatible with Flutter Web.

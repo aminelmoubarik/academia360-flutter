@@ -637,7 +637,7 @@ class _FocusModules extends StatelessWidget {
       Row(children: [
         Text('Módulos principais', style: TextStyle(fontSize: 17, fontWeight: FontWeight.w900, color: c.ink)),
         const SizedBox(width: 10),
-        _Pill(text: 'Alinhado com o enunciado de Nuno', color: Brand.blue),
+        _Pill(text: 'Fluxo principal da plataforma', color: Brand.blue),
       ]),
       const SizedBox(height: 14),
       LayoutBuilder(builder: (context, constraints) {
