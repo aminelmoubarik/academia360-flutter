@@ -25,6 +25,8 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
 
   User? _user;
   bool _loading = true;
+  bool _exportingPdf = false;
+  bool _exportingExcel = false;
   String? _error;
   String _search = '';
 
@@ -199,6 +201,46 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
   }
 
 
+  Future<void> _exportAttendance(String format) async {
+    setState(() {
+      if (format == 'pdf') {
+        _exportingPdf = true;
+      } else {
+        _exportingExcel = true;
+      }
+    });
+
+    try {
+      await ApiService.downloadAttendanceExport(
+        format: format,
+        startDate: _range == null ? null : _formatDate(_range!.start),
+        endDate: _range == null ? null : _formatDate(_range!.end),
+        classId: _classId,
+        disciplineId: _disciplineId,
+        punchType: _punchType,
+        punchMethod: _punchMethod,
+        isSynced: _syncFilter == null ? null : _syncFilter == 'synced',
+        search: _search,
+      );
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(format == 'pdf' ? 'PDF exportado com sucesso.' : 'Excel exportado com sucesso.')),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(e.toString()), backgroundColor: Brand.danger),
+      );
+    } finally {
+      if (!mounted) return;
+      setState(() {
+        _exportingPdf = false;
+        _exportingExcel = false;
+      });
+    }
+  }
+
+
   String _classLabel(dynamic item) {
     final name = item['name']?.toString() ?? 'Turma';
     final course = item['course_code']?.toString();
@@ -316,6 +358,14 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                           },
                           onClearFilters: _clearFilters,
                         ),
+                        const SizedBox(height: 12),
+                        _AttendanceExportActions(
+                          exportingPdf: _exportingPdf,
+                          exportingExcel: _exportingExcel,
+                          enabled: _filtered.isNotEmpty,
+                          onExportPdf: () => _exportAttendance('pdf'),
+                          onExportExcel: () => _exportAttendance('excel'),
+                        ),
                         const SizedBox(height: 8),
                         ResultCount(count: _filtered.length, noun: 'registos encontrados'),
                         const SizedBox(height: 6),
@@ -336,6 +386,75 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                       ],
                     ),
                   ),
+      ),
+    );
+  }
+}
+
+
+class _AttendanceExportActions extends StatelessWidget {
+  final bool exportingPdf;
+  final bool exportingExcel;
+  final bool enabled;
+  final VoidCallback onExportPdf;
+  final VoidCallback onExportExcel;
+
+  const _AttendanceExportActions({
+    required this.exportingPdf,
+    required this.exportingExcel,
+    required this.enabled,
+    required this.onExportPdf,
+    required this.onExportExcel,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final c = AppColors.of(context);
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: c.surface,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: c.line),
+      ),
+      child: Wrap(
+        spacing: 10,
+        runSpacing: 10,
+        alignment: WrapAlignment.spaceBetween,
+        crossAxisAlignment: WrapCrossAlignment.center,
+        children: [
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.ios_share_outlined, color: c.muted, size: 18),
+              const SizedBox(width: 8),
+              Text(
+                'Exportar relatório filtrado',
+                style: TextStyle(color: c.ink, fontWeight: FontWeight.w900),
+              ),
+            ],
+          ),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              OutlinedButton.icon(
+                onPressed: enabled && !exportingPdf ? onExportPdf : null,
+                icon: exportingPdf
+                    ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2))
+                    : const Icon(Icons.picture_as_pdf_outlined, size: 18),
+                label: const Text('PDF'),
+              ),
+              FilledButton.icon(
+                onPressed: enabled && !exportingExcel ? onExportExcel : null,
+                icon: exportingExcel
+                    ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2))
+                    : const Icon(Icons.table_chart_outlined, size: 18),
+                label: const Text('Excel'),
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }

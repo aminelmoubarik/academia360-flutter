@@ -7,6 +7,7 @@ import '../core/storage.dart';
 import '../core/theme.dart';
 import '../core/ui.dart';
 import '../services/api_service.dart';
+import 'qr_scanner_dialog.dart';
 
 class AttendancePunchScreen extends StatefulWidget {
   const AttendancePunchScreen({super.key});
@@ -114,6 +115,22 @@ class _AttendancePunchScreenState extends State<AttendancePunchScreen> {
   Future<void> _tryAutoSync() async {
     if (!mounted || _offlineQueue.isEmpty || _submitting || _syncingQueue) return;
     await _syncQueue(auto: true);
+  }
+
+
+  Future<void> _openScanner() async {
+    final result = await showDialog<ScannedAttendanceCode>(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => const QrBarcodeScannerDialog(),
+    );
+    if (result == null || !mounted) return;
+    setState(() {
+      _codeController.text = result.code;
+      _method = result.method;
+    });
+    AppFeedback.success(context, '${result.formatLabel} lido com sucesso.');
+    _focusNode.requestFocus();
   }
 
   Future<void> _registerPunch({bool forceOffline = false}) async {
@@ -336,6 +353,7 @@ class _AttendancePunchScreenState extends State<AttendancePunchScreen> {
                   onPunchTypeChanged: (v) => setState(() => _punchType = v),
                   onSubmit: () => _registerPunch(),
                   onOffline: () => _registerPunch(forceOffline: true),
+                  onScanCode: _openScanner,
                 );
                 final status = _StatusPanel(
                   loading: _loadingDashboard,
@@ -446,6 +464,7 @@ class _PunchFormCard extends StatelessWidget {
   final ValueChanged<String> onPunchTypeChanged;
   final VoidCallback onSubmit;
   final VoidCallback onOffline;
+  final VoidCallback onScanCode;
 
   const _PunchFormCard({
     required this.codeController,
@@ -457,6 +476,7 @@ class _PunchFormCard extends StatelessWidget {
     required this.onPunchTypeChanged,
     required this.onSubmit,
     required this.onOffline,
+    required this.onScanCode,
   });
 
   @override
@@ -527,26 +547,50 @@ class _PunchFormCard extends StatelessWidget {
             return Row(children: [Expanded(child: methodField), const SizedBox(width: 12), Expanded(child: typeField)]);
           }),
           const SizedBox(height: 18),
-          Row(children: [
-            Expanded(
-              child: FilledButton.icon(
-                onPressed: submitting ? null : onSubmit,
-                icon: submitting
-                    ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                    : const Icon(Icons.fingerprint),
-                label: Text(submitting ? 'A registar…' : 'Registar picagem'),
-              ),
-            ),
-            const SizedBox(width: 10),
-            OutlinedButton.icon(
+          LayoutBuilder(builder: (context, constraints) {
+            final narrow = constraints.maxWidth < 640;
+            final registerButton = FilledButton.icon(
+              onPressed: submitting ? null : onSubmit,
+              icon: submitting
+                  ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                  : const Icon(Icons.fingerprint),
+              label: Text(submitting ? 'A registar…' : 'Registar picagem'),
+            );
+            final scanButton = OutlinedButton.icon(
+              onPressed: submitting ? null : onScanCode,
+              icon: const Icon(Icons.qr_code_scanner_outlined),
+              label: const Text('Ler QR/barcode'),
+            );
+            final offlineButton = OutlinedButton.icon(
               onPressed: submitting ? null : onOffline,
               icon: const Icon(Icons.cloud_off_outlined),
               label: const Text('Offline'),
-            ),
-          ]),
+            );
+
+            if (narrow) {
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  registerButton,
+                  const SizedBox(height: 10),
+                  scanButton,
+                  const SizedBox(height: 10),
+                  offlineButton,
+                ],
+              );
+            }
+
+            return Row(children: [
+              Expanded(child: registerButton),
+              const SizedBox(width: 10),
+              scanButton,
+              const SizedBox(width: 10),
+              offlineButton,
+            ]);
+          }),
           const SizedBox(height: 10),
           Text(
-            'Dica: leitores USB RFID/QR normalmente escrevem o código neste campo e enviam Enter automaticamente.',
+            'Dica: pode usar leitor USB, leitura por câmera QR/barcode ou introdução manual.',
             style: TextStyle(fontSize: 12, color: c.faint, height: 1.35),
           ),
         ]),

@@ -28,5 +28,7 @@
 	<string>MainMenu</string>
 	<key>NSPrincipalClass</key>
 	<string>NSApplication</string>
+	<key>NSCameraUsageDescription</key>
+	<string>Academia360 uses the camera to scan student QR codes and barcodes for attendance punching.</string>
 </dict>
 </plist>

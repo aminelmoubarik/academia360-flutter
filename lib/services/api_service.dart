@@ -165,6 +165,7 @@ class ApiService {
     String? punchType,
     String? punchMethod,
     bool? isSynced,
+    String? search,
     int limit = 300,
   }) {
     final query = <String, String>{
@@ -177,6 +178,7 @@ class ApiService {
       if (punchType != null) 'punch_type': punchType,
       if (punchMethod != null) 'punch_method': punchMethod,
       if (isSynced != null) 'is_synced': isSynced.toString(),
+      if (search != null && search.trim().isNotEmpty) 'search': search.trim(),
     };
     final suffix = query.isEmpty ? '' : '?${Uri(queryParameters: query).query}';
     return _getList('/attendance$suffix');
@@ -311,6 +313,69 @@ class ApiService {
 
     final match = RegExp(r'filename="?([^";]+)"?').firstMatch(contentDisposition);
     return match?.group(1) ?? fallback;
+  }
+
+  static Future<void> downloadAttendanceExport({
+    required String format,
+    String? startDate,
+    String? endDate,
+    int? classId,
+    int? studentId,
+    int? disciplineId,
+    String? punchType,
+    String? punchMethod,
+    bool? isSynced,
+    String? search,
+  }) async {
+    if (format != 'pdf' && format != 'excel') {
+      throw ApiException('Formato de exportação inválido.');
+    }
+
+    final query = <String, String>{
+      if (startDate != null) 'start_date': startDate,
+      if (endDate != null) 'end_date': endDate,
+      if (classId != null) 'class_id': classId.toString(),
+      if (studentId != null) 'student_id': studentId.toString(),
+      if (disciplineId != null) 'discipline_id': disciplineId.toString(),
+      if (punchType != null) 'punch_type': punchType,
+      if (punchMethod != null) 'punch_method': punchMethod,
+      if (isSynced != null) 'is_synced': isSynced.toString(),
+      if (search != null && search.trim().isNotEmpty) 'search': search.trim(),
+    };
+    final suffix = query.isEmpty ? '' : '?${Uri(queryParameters: query).query}';
+
+    try {
+      final headers = await _authHeaders();
+      final response = await http
+          .get(
+            Uri.parse('${ApiConstants.baseUrl}/attendance/export/$format$suffix'),
+            headers: headers,
+          )
+          .timeout(const Duration(seconds: 30));
+
+      if (response.statusCode >= 200 && response.statusCode < 300) {
+        final extension = format == 'pdf' ? 'pdf' : 'xlsx';
+        final contentType = format == 'pdf'
+            ? 'application/pdf'
+            : 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+        final filename = _filenameFromHeaders(
+          response.headers,
+          'academia360_assiduidade.$extension',
+        );
+        DownloadService.downloadBytes(
+          Uint8List.fromList(response.bodyBytes),
+          filename: filename,
+          contentType: contentType,
+        );
+        return;
+      }
+
+      throw ApiException(_messageFromResponse(response));
+    } on TimeoutException {
+      throw ApiException('A exportação demorou demasiado.');
+    } on http.ClientException {
+      throw ApiException('Não foi possível contactar o servidor para exportar a assiduidade.');
+    }
   }
 
   static Future<void> downloadScheduleExport({

@@ -24,8 +24,8 @@ The app is connected to the Academia360 FastAPI backend.
 - Role-based dashboard navigation with a desktop sidebar and mobile drawer.
 - Academia-branded splash screen and favicon.
 - Administrative dashboard with quick actions, grouped submenus and project map.
-- Attendance punching screen.
-- Attendance dashboard, advanced filters and absenteeism indicators.
+- Attendance punching screen with USB-reader/manual input and QR/barcode camera scanning.
+- Attendance dashboard, advanced filters, absenteeism indicators and PDF/Excel export actions.
 - Offline attendance queue with later synchronization.
 - CRUD screens for:
   - users,
@@ -118,10 +118,8 @@ Backend authorization still remains the source of truth; hiding UI actions is on
 ## Future Frontend Improvements
 
 - Real NFC integration on mobile using `flutter_nfc_kit`.
-- QR/barcode camera scanning.
 - More advanced offline storage using Hive or Isar.
 - Automatic sync on reconnection.
-- Attendance report export UI.
 
 
 ## Step 8 - Attendance Alerts
@@ -141,3 +139,14 @@ The attendance punching screen now keeps richer local queue metadata for offline
 - manual discard for invalid local records.
 
 This improves the offline workflow requested in the project brief while keeping the implementation compatible with Flutter Web.
+
+## Step 10 - QR/Barcode Camera Scanner
+
+The punching terminal now includes a camera scanner powered by `mobile_scanner`. It supports QR codes and common barcode formats, fills the student card/code field automatically and sets the punching method to `qr` or `barcode` depending on the detected code.
+
+Browser camera permission is required when running on Flutter Web. Android/iOS camera permission messages were added to the platform configuration.
+
+
+## Step 11 - Attendance Report Export
+
+The attendance screen can now export the filtered register list to PDF or Excel. The export respects the active filters and search text, allowing the school to generate reports by date range, class, discipline, punch type, method and sync status.
