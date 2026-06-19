@@ -49,7 +49,8 @@ The app is connected to the Academia360 FastAPI backend.
   - status selection,
   - PDF export,
   - Excel export.
-- Reports, attendance views and absence justification management.
+- Central reports hub with attendance exports, timetable exports, operational indicators and audit shortcuts.
+- Attendance views and absence justification management.
 - User password creation and update flow.
 - Improved error handling so forms remain open when validation fails.
 
@@ -168,3 +169,8 @@ Frontend additions:
 - Filters by date, module, action and search text.
 
 Before using the screen on an existing database, run the audit migration.
+
+
+## Step 13 - Central Reports Hub
+
+The `Relatórios` screen was redesigned as a management reporting center. It now includes KPI cards, attendance export controls, timetable export controls and quick access to attendance, timetable and audit areas. This replaces the earlier simple attendance-only report and makes the app closer to a real school administration platform.
