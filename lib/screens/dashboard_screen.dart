@@ -194,7 +194,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
             child: const AcademiaCompactMark(size: 20),
           ),
           const SizedBox(width: 14),
-          Text('Painel', style: TextStyle(fontSize: 15, color: c.ink)),
+          Text('Centro operacional', style: TextStyle(fontSize: 15, color: c.ink, fontWeight: FontWeight.w900)),
         ]),
         actions: [
           if (user != null)
@@ -317,6 +317,7 @@ class _NavItem {
   const _NavItem(this.key, this.label, this.icon, this.color);
 }
 
+
 class _SideNavigation extends StatelessWidget {
   final User user;
   final String roleLabel;
@@ -334,56 +335,115 @@ class _SideNavigation extends StatelessWidget {
   Widget build(BuildContext context) {
     final c = AppColors.of(context);
     return Container(
-      width: 292,
+      width: 312,
+      margin: const EdgeInsets.fromLTRB(14, 14, 0, 14),
       decoration: BoxDecoration(
-        color: c.surface,
-        border: Border(right: BorderSide(color: c.line)),
+        gradient: LinearGradient(
+          colors: c.isDark
+              ? [const Color(0xFF111629), const Color(0xFF080A12)]
+              : [const Color(0xFF1722C9), const Color(0xFF0E176E)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(30),
+        border: Border.all(color: Colors.white.withValues(alpha: c.isDark ? 0.08 : 0.16)),
+        boxShadow: [
+          BoxShadow(
+            color: Brand.blueDeep.withValues(alpha: c.isDark ? 0.34 : 0.22),
+            blurRadius: 34,
+            offset: const Offset(0, 18),
+          ),
+        ],
       ),
-      child: SafeArea(
-        top: false,
-        child: Column(children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(18, 18, 18, 14),
-            child: Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [Brand.blue.withValues(alpha: 0.10), Brand.blueSoft.withValues(alpha: 0.70)],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-                borderRadius: BorderRadius.circular(22),
-                border: Border.all(color: Brand.blue.withValues(alpha: 0.13)),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(30),
+        child: Stack(children: [
+          Positioned(top: -80, right: -70, child: _NavOrb(size: 190, opacity: 0.14)),
+          Positioned(bottom: 90, left: -110, child: _NavOrb(size: 230, opacity: 0.08)),
+          SafeArea(
+            top: false,
+            child: Column(children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 22, 20, 18),
+                child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  const AcademiaWordmark(
+                    size: 27,
+                    showSchoolText: true,
+                    show360: false,
+                    inverse: true,
+                    alignment: MainAxisAlignment.start,
+                  ),
+                  const SizedBox(height: 16),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.10),
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: Colors.white.withValues(alpha: 0.13)),
+                    ),
+                    child: Row(children: [
+                      const Icon(Icons.hub_outlined, size: 16, color: Colors.white),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          'Centro operacional Academia360',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            color: Colors.white.withValues(alpha: 0.88),
+                            fontWeight: FontWeight.w900,
+                            fontSize: 12,
+                          ),
+                        ),
+                      ),
+                    ]),
+                  ),
+                ]),
               ),
-              child: const AcademiaWordmark(size: 27, showSchoolText: true, show360: false),
-            ),
-          ),
-          _NavTile(
-            item: const _NavItem('dashboard', 'Painel geral', Icons.dashboard_customize_outlined, Brand.blue),
-            selected: true,
-            onTap: () => onNavigate('dashboard'),
-          ),
-          Expanded(
-            child: ListView(
-              padding: const EdgeInsets.fromLTRB(12, 4, 12, 18),
-              children: [
-                for (final section in sections) ...[
-                  _SectionHeader(section.title),
-                  for (final item in section.items) _NavTile(item: item, onTap: () => onNavigate(item.key)),
-                ],
-              ],
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.all(14),
-            child: _MiniUserCard(user: user, roleLabel: roleLabel),
+              _NavTile(
+                item: const _NavItem('dashboard', 'Painel geral', Icons.dashboard_customize_outlined, Brand.blueLight),
+                selected: true,
+                onTap: () => onNavigate('dashboard'),
+              ),
+              Expanded(
+                child: ListView(
+                  padding: const EdgeInsets.fromLTRB(12, 4, 12, 18),
+                  children: [
+                    for (final section in sections) ...[
+                      _SectionHeader(section.title),
+                      for (final item in section.items) _NavTile(item: item, onTap: () => onNavigate(item.key)),
+                    ],
+                  ],
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.all(14),
+                child: _MiniUserCard(user: user, roleLabel: roleLabel),
+              ),
+            ]),
           ),
         ]),
       ),
     );
   }
 }
+
+class _NavOrb extends StatelessWidget {
+  final double size;
+  final double opacity;
+  const _NavOrb({required this.size, required this.opacity});
+
+  @override
+  Widget build(BuildContext context) => Container(
+        width: size,
+        height: size,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          color: Colors.white.withValues(alpha: opacity),
+        ),
+      );
+}
+
 
 class _AppDrawer extends StatelessWidget {
   final User user;
@@ -400,40 +460,52 @@ class _AppDrawer extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final c = AppColors.of(context);
     return Drawer(
-      backgroundColor: c.surface,
+      backgroundColor: const Color(0xFF101A8C),
       child: SafeArea(
-        child: Column(children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(18, 12, 18, 12),
-            child: const AcademiaWordmark(size: 28, showSchoolText: true, show360: false),
-          ),
-          _NavTile(
-            item: const _NavItem('dashboard', 'Painel geral', Icons.dashboard_customize_outlined, Brand.blue),
-            selected: true,
-            onTap: () => onNavigate('dashboard'),
-          ),
-          Expanded(
-            child: ListView(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-              children: [
-                for (final section in sections) ...[
-                  _SectionHeader(section.title),
-                  for (final item in section.items) _NavTile(item: item, onTap: () => onNavigate(item.key)),
-                ],
-              ],
+        child: Stack(children: [
+          Positioned(top: -90, right: -90, child: _NavOrb(size: 220, opacity: 0.12)),
+          Column(children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(18, 18, 18, 12),
+              child: Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.10),
+                  borderRadius: BorderRadius.circular(22),
+                  border: Border.all(color: Colors.white.withValues(alpha: 0.12)),
+                ),
+                child: const AcademiaWordmark(size: 27, showSchoolText: true, show360: false, inverse: true),
+              ),
             ),
-          ),
-          Padding(
-            padding: const EdgeInsets.all(14),
-            child: _MiniUserCard(user: user, roleLabel: roleLabel),
-          ),
+            _NavTile(
+              item: const _NavItem('dashboard', 'Painel geral', Icons.dashboard_customize_outlined, Brand.blueLight),
+              selected: true,
+              onTap: () => onNavigate('dashboard'),
+            ),
+            Expanded(
+              child: ListView(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                children: [
+                  for (final section in sections) ...[
+                    _SectionHeader(section.title),
+                    for (final item in section.items) _NavTile(item: item, onTap: () => onNavigate(item.key)),
+                  ],
+                ],
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.all(14),
+              child: _MiniUserCard(user: user, roleLabel: roleLabel),
+            ),
+          ]),
         ]),
       ),
     );
   }
 }
+
 
 class _SectionHeader extends StatelessWidget {
   final String title;
@@ -441,18 +513,32 @@ class _SectionHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final c = AppColors.of(context);
     return Padding(
-      padding: const EdgeInsets.fromLTRB(10, 18, 10, 7),
-      child: Text(
-        title.toUpperCase(),
-        style: TextStyle(
-          color: c.faint,
-          fontSize: 10,
-          fontWeight: FontWeight.w900,
-          letterSpacing: 0.9,
+      padding: const EdgeInsets.fromLTRB(12, 20, 12, 8),
+      child: Row(children: [
+        Container(
+          width: 5,
+          height: 5,
+          decoration: BoxDecoration(
+            color: Colors.white.withValues(alpha: 0.42),
+            shape: BoxShape.circle,
+          ),
         ),
-      ),
+        const SizedBox(width: 8),
+        Expanded(
+          child: Text(
+            title.toUpperCase(),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              color: Colors.white.withValues(alpha: 0.58),
+              fontSize: 10,
+              fontWeight: FontWeight.w900,
+              letterSpacing: 1.0,
+            ),
+          ),
+        ),
+      ]),
     );
   }
 }
@@ -468,60 +554,83 @@ class _NavTile extends StatefulWidget {
   State<_NavTile> createState() => _NavTileState();
 }
 
+
 class _NavTileState extends State<_NavTile> {
   bool _hover = false;
 
   @override
   Widget build(BuildContext context) {
-    final c = AppColors.of(context);
     final active = widget.selected;
+    final itemColor = active ? Colors.white : widget.item.color;
     return MouseRegion(
       onEnter: (_) => setState(() => _hover = true),
       onExit: (_) => setState(() => _hover = false),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 160),
-        margin: const EdgeInsets.symmetric(vertical: 2),
+        margin: const EdgeInsets.symmetric(vertical: 3),
+        transform: _hover ? (Matrix4.identity()..translateByDouble(2.0, 0.0, 0.0, 1.0)) : Matrix4.identity(),
         child: Material(
           color: active
-              ? Brand.blue.withValues(alpha: c.isDark ? 0.18 : 0.09)
+              ? Colors.white.withValues(alpha: 0.18)
               : _hover
-                  ? widget.item.color.withValues(alpha: c.isDark ? 0.14 : 0.07)
+                  ? Colors.white.withValues(alpha: 0.10)
                   : Colors.transparent,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(14),
-            side: BorderSide(
-              color: active ? Brand.blue.withValues(alpha: 0.18) : Colors.transparent,
-            ),
+            borderRadius: BorderRadius.circular(18),
+            side: BorderSide(color: active ? Colors.white.withValues(alpha: 0.26) : Colors.white.withValues(alpha: 0.05)),
           ),
           clipBehavior: Clip.antiAlias,
-          child: ListTile(
-            dense: true,
-            minLeadingWidth: 30,
-            visualDensity: const VisualDensity(vertical: -1),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-            leading: Container(
-              width: 31,
-              height: 31,
-              decoration: BoxDecoration(
-                color: widget.item.color.withValues(alpha: c.isDark ? 0.22 : 0.10),
-                borderRadius: BorderRadius.circular(11),
-              ),
-              child: Icon(widget.item.icon, color: widget.item.color, size: 18),
-            ),
-            title: Text(
-              widget.item.label,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: TextStyle(color: c.ink, fontWeight: active ? FontWeight.w900 : FontWeight.w700, fontSize: 13),
-            ),
-            trailing: active ? const Icon(Icons.circle, size: 7, color: Brand.blue) : null,
+          child: InkWell(
             onTap: widget.onTap,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 9),
+              child: Row(children: [
+                AnimatedContainer(
+                  duration: const Duration(milliseconds: 160),
+                  width: 36,
+                  height: 36,
+                  decoration: BoxDecoration(
+                    color: active
+                        ? Colors.white.withValues(alpha: 0.20)
+                        : widget.item.color.withValues(alpha: 0.18),
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(color: Colors.white.withValues(alpha: active ? 0.20 : 0.06)),
+                  ),
+                  child: Icon(widget.item.icon, color: itemColor, size: 19),
+                ),
+                const SizedBox(width: 11),
+                Expanded(
+                  child: Text(
+                    widget.item.label,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      color: Colors.white.withValues(alpha: active ? 1 : 0.82),
+                      fontWeight: active ? FontWeight.w900 : FontWeight.w700,
+                      fontSize: 13,
+                    ),
+                  ),
+                ),
+                if (active)
+                  Container(
+                    width: 7,
+                    height: 24,
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(999),
+                    ),
+                  )
+                else
+                  Icon(Icons.chevron_right_rounded, color: Colors.white.withValues(alpha: _hover ? 0.72 : 0.28), size: 20),
+              ]),
+            ),
           ),
         ),
       ),
     );
   }
 }
+
 
 class _MiniUserCard extends StatelessWidget {
   final User user;
@@ -530,32 +639,38 @@ class _MiniUserCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final c = AppColors.of(context);
     return Container(
-      padding: const EdgeInsets.all(13),
+      padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: c.surfaceAlt,
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: c.line),
+        color: Colors.white.withValues(alpha: 0.10),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.14)),
       ),
       child: Row(children: [
-        CircleAvatar(
-          radius: 18,
-          backgroundColor: Brand.blue.withValues(alpha: c.isDark ? 0.24 : 0.10),
-          child: Text(
-            user.fullName.isNotEmpty ? user.fullName[0].toUpperCase() : 'U',
-            style: const TextStyle(color: Brand.blue, fontWeight: FontWeight.w900),
+        Container(
+          width: 38,
+          height: 38,
+          decoration: BoxDecoration(
+            color: Colors.white.withValues(alpha: 0.16),
+            borderRadius: BorderRadius.circular(15),
+          ),
+          child: Center(
+            child: Text(
+              user.fullName.isNotEmpty ? user.fullName[0].toUpperCase() : 'U',
+              style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w900),
+            ),
           ),
         ),
         const SizedBox(width: 10),
         Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Text(user.fullName, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(color: c.ink, fontWeight: FontWeight.w900, fontSize: 12.5)),
-          Text(roleLabel, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(color: c.muted, fontWeight: FontWeight.w700, fontSize: 11)),
+          Text(user.fullName, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 12.5)),
+          Text(roleLabel, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(color: Colors.white.withValues(alpha: 0.62), fontWeight: FontWeight.w700, fontSize: 11)),
         ])),
       ]),
     );
   }
 }
+
 
 class _DashboardHome extends StatelessWidget {
   final User user;
@@ -576,28 +691,136 @@ class _DashboardHome extends StatelessWidget {
     return DecoratedBox(
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          colors: c.isDark ? [c.surface, c.bg] : [Colors.white, Brand.blueSoft.withValues(alpha: 0.48), c.bg],
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
+          colors: c.isDark
+              ? [const Color(0xFF090B12), c.bg]
+              : [const Color(0xFFF9FAFF), const Color(0xFFF0F3FF), c.bg],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
         ),
       ),
-      child: SingleChildScrollView(
-        padding: const EdgeInsets.all(28),
-        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          _HeroPanel(user: user, roleLabel: roleLabel, onPunch: () => onNavigate('attendance_punch')),
-          const SizedBox(height: 18),
-          _StatsWrap(stats: stats),
-          const SizedBox(height: 28),
-          _FocusModules(role: user.role, onNavigate: onNavigate),
-          const SizedBox(height: 28),
-          _ProjectMap(role: user.role, onNavigate: onNavigate),
-          const SizedBox(height: 30),
-          Center(
-            child: Text(
-              'Academia360 · Projeto Erasmus+ · Prof. Albino de Matos',
-              style: TextStyle(fontSize: 11, color: c.muted.withValues(alpha: 0.7)),
+      child: Stack(children: [
+        Positioned(top: -130, right: -140, child: _DashboardBlob(color: Brand.blue, size: 330, opacity: c.isDark ? 0.10 : 0.11)),
+        Positioned(top: 280, left: -170, child: _DashboardBlob(color: Brand.teal, size: 280, opacity: c.isDark ? 0.08 : 0.07)),
+        SingleChildScrollView(
+          padding: const EdgeInsets.fromLTRB(30, 28, 30, 30),
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            _HeroPanel(user: user, roleLabel: roleLabel, onPunch: () => onNavigate('attendance_punch')),
+            const SizedBox(height: 18),
+            _StatsWrap(stats: stats),
+            const SizedBox(height: 30),
+            _OperationsHeader(onNavigate: onNavigate, role: user.role),
+            const SizedBox(height: 20),
+            _FocusModules(role: user.role, onNavigate: onNavigate),
+            const SizedBox(height: 30),
+            _ProjectMap(role: user.role, onNavigate: onNavigate),
+            const SizedBox(height: 30),
+            Center(
+              child: Text(
+                'Academia360 · Plataforma operacional Erasmus+ · Prof. Albino de Matos',
+                style: TextStyle(fontSize: 11, color: c.muted.withValues(alpha: 0.72), fontWeight: FontWeight.w700),
+              ),
             ),
+          ]),
+        ),
+      ]),
+    );
+  }
+}
+
+class _DashboardBlob extends StatelessWidget {
+  final Color color;
+  final double size;
+  final double opacity;
+  const _DashboardBlob({required this.color, required this.size, required this.opacity});
+
+  @override
+  Widget build(BuildContext context) => Container(
+        width: size,
+        height: size,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          color: color.withValues(alpha: opacity),
+        ),
+      );
+}
+
+class _OperationsHeader extends StatelessWidget {
+  final String role;
+  final ValueChanged<String> onNavigate;
+  const _OperationsHeader({required this.role, required this.onNavigate});
+
+  @override
+  Widget build(BuildContext context) {
+    final c = AppColors.of(context);
+    final actions = [
+      if (AppPermissions.canUsePunchTerminal(role)) _QuickAction('Picagem', Icons.contactless_outlined, Brand.blue, 'attendance_punch'),
+      if (AppPermissions.canViewAttendance(role)) _QuickAction('Assiduidade', Icons.fingerprint, Brand.pink, 'attendance'),
+      if (AppPermissions.canViewReports(role)) _QuickAction('Relatórios', Icons.insights_outlined, Brand.amber, 'reports'),
+      if (AppPermissions.canApproveSchedule(role)) _QuickAction('Aprovar horários', Icons.verified_outlined, Brand.ok, 'schedule_approval'),
+      if (AppPermissions.canViewSchedule(role)) _QuickAction('Horários', Icons.calendar_today_outlined, Brand.violet, 'schedule'),
+    ];
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: c.surface.withValues(alpha: c.isDark ? 0.72 : 0.86),
+        borderRadius: BorderRadius.circular(26),
+        border: Border.all(color: c.line),
+        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: c.isDark ? 0.18 : 0.035), blurRadius: 24, offset: const Offset(0, 10))],
+      ),
+      child: Row(children: [
+        Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Text('Mesa de operações', style: TextStyle(fontSize: 17, fontWeight: FontWeight.w900, color: c.ink, letterSpacing: -0.2)),
+          const SizedBox(height: 4),
+          Text('Acessos rápidos aos fluxos principais da plataforma.', style: TextStyle(color: c.muted, fontSize: 12.5, fontWeight: FontWeight.w600)),
+        ])),
+        const SizedBox(width: 12),
+        Flexible(
+          child: Wrap(
+            alignment: WrapAlignment.end,
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              for (final action in actions.take(5))
+                _QuickActionChip(action: action, onTap: () => onNavigate(action.key)),
+            ],
           ),
+        ),
+      ]),
+    );
+  }
+}
+
+class _QuickAction {
+  final String label;
+  final IconData icon;
+  final Color color;
+  final String key;
+  const _QuickAction(this.label, this.icon, this.color, this.key);
+}
+
+class _QuickActionChip extends StatelessWidget {
+  final _QuickAction action;
+  final VoidCallback onTap;
+  const _QuickActionChip({required this.action, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    final c = AppColors.of(context);
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(999),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
+        decoration: BoxDecoration(
+          color: action.color.withValues(alpha: c.isDark ? 0.18 : 0.09),
+          borderRadius: BorderRadius.circular(999),
+          border: Border.all(color: action.color.withValues(alpha: 0.16)),
+        ),
+        child: Row(mainAxisSize: MainAxisSize.min, children: [
+          Icon(action.icon, size: 16, color: action.color),
+          const SizedBox(width: 7),
+          Text(action.label, style: TextStyle(color: c.ink, fontSize: 12, fontWeight: FontWeight.w900)),
         ]),
       ),
     );
@@ -1013,6 +1236,7 @@ class _ProfileLine extends StatelessWidget {
   }
 }
 
+
 class _HeroPanel extends StatelessWidget {
   final User user;
   final String roleLabel;
@@ -1021,56 +1245,121 @@ class _HeroPanel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final c = AppColors.of(context);
     return Container(
       width: double.infinity,
       clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(
-        gradient: Brand.heroGradient,
-        borderRadius: BorderRadius.circular(28),
-        boxShadow: [BoxShadow(color: Brand.blue.withValues(alpha: 0.28), blurRadius: 30, offset: const Offset(0, 16))],
+        color: c.surface,
+        borderRadius: BorderRadius.circular(34),
+        border: Border.all(color: c.line),
+        boxShadow: [BoxShadow(color: Brand.blue.withValues(alpha: c.isDark ? 0.18 : 0.12), blurRadius: 36, offset: const Offset(0, 18))],
       ),
       child: Stack(children: [
-        Positioned(top: -95, right: -80, child: _HeroGlow(size: 260, opacity: 0.15)),
-        Positioned(bottom: -130, left: -70, child: _HeroGlow(size: 300, opacity: 0.13)),
-        Padding(
-          padding: const EdgeInsets.all(26),
+        Positioned.fill(
           child: Row(children: [
             Expanded(
-              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.13),
-                    borderRadius: BorderRadius.circular(999),
-                    border: Border.all(color: Colors.white.withValues(alpha: 0.20)),
+              flex: 7,
+              child: Container(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [Brand.blueDeep, Brand.blue, Brand.blueLight.withValues(alpha: 0.92)],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
                   ),
-                  child: const Text('ACADEMIA PROFISSIONAL', style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w900, letterSpacing: 1.2)),
                 ),
-                const SizedBox(height: 14),
-                Text('Olá, ${user.fullName.split(' ').first}', style: const TextStyle(color: Colors.white, fontSize: 25, fontWeight: FontWeight.w900, letterSpacing: -0.5)),
-                const SizedBox(height: 5),
-                Text('Prof. Albino de Matos · $roleLabel', style: TextStyle(color: Colors.white.withValues(alpha: 0.74), fontSize: 13, fontWeight: FontWeight.w700)),
-                const SizedBox(height: 15),
-                const Text('Prioridade do projeto: picagem NFC/RFID e geração automática de horários.', style: TextStyle(color: Colors.white, fontSize: 13, height: 1.45)),
-                const SizedBox(height: 16),
-                if (AppPermissions.canUsePunchTerminal(user.role))
-                FilledButton.icon(
-                  style: FilledButton.styleFrom(backgroundColor: Colors.white, foregroundColor: Brand.blue),
-                  onPressed: onPunch,
-                  icon: const Icon(Icons.contactless_outlined),
-                  label: const Text('Abrir terminal de picagem'),
-                ),
-              ]),
+              ),
             ),
-            const SizedBox(width: 20),
-            Container(
-              width: 76,
-              height: 76,
-              decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.16), borderRadius: BorderRadius.circular(24), border: Border.all(color: Colors.white.withValues(alpha: 0.24))),
-              child: const Icon(Icons.school_outlined, color: Colors.white, size: 36),
+            Expanded(
+              flex: 3,
+              child: Container(color: c.surface),
             ),
           ]),
         ),
+        Positioned(top: -80, right: 120, child: _HeroGlow(size: 240, opacity: 0.11)),
+        Positioned(bottom: -120, left: -80, child: _HeroGlow(size: 280, opacity: 0.12)),
+        Padding(
+          padding: const EdgeInsets.all(28),
+          child: Row(children: [
+            Expanded(
+              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                Row(children: [
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.13),
+                      borderRadius: BorderRadius.circular(999),
+                      border: Border.all(color: Colors.white.withValues(alpha: 0.20)),
+                    ),
+                    child: const Text('ACADEMIA360 OPERATIONS', style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w900, letterSpacing: 1.2)),
+                  ),
+                  const SizedBox(width: 10),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                    decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.10), borderRadius: BorderRadius.circular(999)),
+                    child: Text(roleLabel, style: TextStyle(color: Colors.white.withValues(alpha: 0.86), fontSize: 10, fontWeight: FontWeight.w900)),
+                  ),
+                ]),
+                const SizedBox(height: 16),
+                Text('Olá, ${user.fullName.split(' ').first}', style: const TextStyle(color: Colors.white, fontSize: 27, fontWeight: FontWeight.w900, letterSpacing: -0.7)),
+                const SizedBox(height: 6),
+                Text('Controlo de picagem, assiduidade, horários e relatórios num único centro.', style: TextStyle(color: Colors.white.withValues(alpha: 0.78), fontSize: 13.5, fontWeight: FontWeight.w700, height: 1.35)),
+                const SizedBox(height: 17),
+                if (AppPermissions.canUsePunchTerminal(user.role))
+                  FilledButton.icon(
+                    style: FilledButton.styleFrom(backgroundColor: Colors.white, foregroundColor: Brand.blue),
+                    onPressed: onPunch,
+                    icon: const Icon(Icons.contactless_outlined),
+                    label: const Text('Abrir terminal de picagem'),
+                  ),
+              ]),
+            ),
+            const SizedBox(width: 22),
+            if (MediaQuery.sizeOf(context).width >= 820)
+              Container(
+                width: 214,
+                padding: const EdgeInsets.all(18),
+                decoration: BoxDecoration(
+                  color: c.surface.withValues(alpha: 0.94),
+                  borderRadius: BorderRadius.circular(28),
+                  border: Border.all(color: c.line),
+                ),
+                child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  const AcademiaCompactMark(size: 25),
+                  const SizedBox(height: 18),
+                  _HeroMetric(label: 'Módulos-chave', value: '2'),
+                  const SizedBox(height: 10),
+                  _HeroMetric(label: 'Fluxos ativos', value: 'Picagem · Horários'),
+                  const SizedBox(height: 10),
+                  _HeroMetric(label: 'Estado', value: 'Demo funcional'),
+                ]),
+              ),
+          ]),
+        ),
+      ]),
+    );
+  }
+}
+
+class _HeroMetric extends StatelessWidget {
+  final String label;
+  final String value;
+  const _HeroMetric({required this.label, required this.value});
+
+  @override
+  Widget build(BuildContext context) {
+    final c = AppColors.of(context);
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Brand.blue.withValues(alpha: c.isDark ? 0.16 : 0.07),
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Text(label, style: TextStyle(color: c.muted, fontSize: 10, fontWeight: FontWeight.w900)),
+        const SizedBox(height: 4),
+        Text(value, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(color: c.ink, fontSize: 12.5, fontWeight: FontWeight.w900)),
       ]),
     );
   }

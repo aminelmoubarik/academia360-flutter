@@ -186,3 +186,16 @@ This step cleaned up minor Flutter analyzer issues introduced during the attenda
 - kept the reports dropdown fix from Step 13.
 
 No database migration is required for this step.
+
+## Step 15 - Final Layout Polish
+
+The dashboard layout was refined to reduce the similarity with generic LMS/Moodle-style navigation. The final UI now uses:
+
+- a branded dark operational sidebar on desktop,
+- a matching branded drawer on smaller screens,
+- an operations-oriented dashboard header,
+- quick action chips for the main workflows,
+- a more distinctive hero area with Academia360 operational messaging,
+- more visual separation between navigation, KPIs, reports and project modules.
+
+This is a visual/frontend-only polish step. It does not require backend or database changes.
