@@ -16,6 +16,26 @@ class ApiException implements Exception {
 class ApiService {
   static const _timeout = Duration(seconds: 15);
 
+
+  static void _addTextParam(Map<String, String> query, String key, String? value) {
+    final cleaned = value?.trim();
+    if (cleaned != null && cleaned.isNotEmpty) {
+      query[key] = cleaned;
+    }
+  }
+
+  static void _addIntParam(Map<String, String> query, String key, int? value) {
+    if (value != null) {
+      query[key] = value.toString();
+    }
+  }
+
+  static void _addBoolParam(Map<String, String> query, String key, bool? value) {
+    if (value != null) {
+      query[key] = value.toString();
+    }
+  }
+
   static Future<Map<String, String>> _authHeaders() async {
     final token = await SecureStorage.getToken();
     return {
@@ -168,18 +188,16 @@ class ApiService {
     String? search,
     int limit = 300,
   }) {
-    final query = <String, String>{
-      'limit': limit.toString(),
-      if (startDate != null) 'start_date': startDate,
-      if (endDate != null) 'end_date': endDate,
-      if (classId != null) 'class_id': classId.toString(),
-      if (studentId != null) 'student_id': studentId.toString(),
-      if (disciplineId != null) 'discipline_id': disciplineId.toString(),
-      if (punchType != null) 'punch_type': punchType,
-      if (punchMethod != null) 'punch_method': punchMethod,
-      if (isSynced != null) 'is_synced': isSynced.toString(),
-      if (search != null && search.trim().isNotEmpty) 'search': search.trim(),
-    };
+    final query = <String, String>{'limit': limit.toString()};
+    _addTextParam(query, 'start_date', startDate);
+    _addTextParam(query, 'end_date', endDate);
+    _addIntParam(query, 'class_id', classId);
+    _addIntParam(query, 'student_id', studentId);
+    _addIntParam(query, 'discipline_id', disciplineId);
+    _addTextParam(query, 'punch_type', punchType);
+    _addTextParam(query, 'punch_method', punchMethod);
+    _addBoolParam(query, 'is_synced', isSynced);
+    _addTextParam(query, 'search', search);
     final suffix = query.isEmpty ? '' : '?${Uri(queryParameters: query).query}';
     return _getList('/attendance$suffix');
   }
@@ -245,11 +263,10 @@ class ApiService {
     int? classId,
     int? disciplineId,
   }) async {
-    final query = <String, String>{
-      if (date != null) 'target_date': date,
-      if (classId != null) 'class_id': classId.toString(),
-      if (disciplineId != null) 'discipline_id': disciplineId.toString(),
-    };
+    final query = <String, String>{};
+    _addTextParam(query, 'target_date', date);
+    _addIntParam(query, 'class_id', classId);
+    _addIntParam(query, 'discipline_id', disciplineId);
     final suffix = query.isEmpty ? '' : '?${Uri(queryParameters: query).query}';
     return _getMap('/attendance/dashboard$suffix');
   }
@@ -260,12 +277,10 @@ class ApiService {
     int? disciplineId,
     int days = 7,
   }) async {
-    final query = <String, String>{
-      'days': days.toString(),
-      if (date != null) 'target_date': date,
-      if (classId != null) 'class_id': classId.toString(),
-      if (disciplineId != null) 'discipline_id': disciplineId.toString(),
-    };
+    final query = <String, String>{'days': days.toString()};
+    _addTextParam(query, 'target_date', date);
+    _addIntParam(query, 'class_id', classId);
+    _addIntParam(query, 'discipline_id', disciplineId);
     final suffix = '?${Uri(queryParameters: query).query}';
     return _getMap('/attendance/alerts$suffix');
   }
@@ -331,17 +346,16 @@ class ApiService {
       throw ApiException('Formato de exportação inválido.');
     }
 
-    final query = <String, String>{
-      if (startDate != null) 'start_date': startDate,
-      if (endDate != null) 'end_date': endDate,
-      if (classId != null) 'class_id': classId.toString(),
-      if (studentId != null) 'student_id': studentId.toString(),
-      if (disciplineId != null) 'discipline_id': disciplineId.toString(),
-      if (punchType != null) 'punch_type': punchType,
-      if (punchMethod != null) 'punch_method': punchMethod,
-      if (isSynced != null) 'is_synced': isSynced.toString(),
-      if (search != null && search.trim().isNotEmpty) 'search': search.trim(),
-    };
+    final query = <String, String>{};
+    _addTextParam(query, 'start_date', startDate);
+    _addTextParam(query, 'end_date', endDate);
+    _addIntParam(query, 'class_id', classId);
+    _addIntParam(query, 'student_id', studentId);
+    _addIntParam(query, 'discipline_id', disciplineId);
+    _addTextParam(query, 'punch_type', punchType);
+    _addTextParam(query, 'punch_method', punchMethod);
+    _addBoolParam(query, 'is_synced', isSynced);
+    _addTextParam(query, 'search', search);
     final suffix = query.isEmpty ? '' : '?${Uri(queryParameters: query).query}';
 
     try {
@@ -430,15 +444,13 @@ class ApiService {
     String? search,
     int limit = 300,
   }) {
-    final query = <String, String>{
-      'limit': limit.toString(),
-      if (startDate != null && startDate.trim().isNotEmpty) 'start_date': startDate.trim(),
-      if (endDate != null && endDate.trim().isNotEmpty) 'end_date': endDate.trim(),
-      if (module != null && module.trim().isNotEmpty) 'module': module.trim(),
-      if (action != null && action.trim().isNotEmpty) 'action': action.trim(),
-      if (userId != null) 'user_id': userId.toString(),
-      if (search != null && search.trim().isNotEmpty) 'search': search.trim(),
-    };
+    final query = <String, String>{'limit': limit.toString()};
+    _addTextParam(query, 'start_date', startDate);
+    _addTextParam(query, 'end_date', endDate);
+    _addTextParam(query, 'module', module);
+    _addTextParam(query, 'action', action);
+    _addIntParam(query, 'user_id', userId);
+    _addTextParam(query, 'search', search);
     final suffix = query.isEmpty ? '' : '?${Uri(queryParameters: query).query}';
     return _getList('/audit-logs$suffix');
   }

@@ -144,7 +144,6 @@ class _Header extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final c = AppColors.of(context);
     final total = summary?['total'] ?? 0;
     final byModule = (summary?['by_module'] as List?) ?? const [];
     final byAction = (summary?['by_action'] as List?) ?? const [];

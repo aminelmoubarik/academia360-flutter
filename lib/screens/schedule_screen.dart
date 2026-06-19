@@ -113,11 +113,12 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
         SnackBar(content: Text(e.toString()), backgroundColor: const Color(0xFFE03131)),
       );
     } finally {
-      if (!mounted) return;
-      setState(() {
-        _exportingPdf = false;
-        _exportingExcel = false;
-      });
+      if (mounted) {
+        setState(() {
+          _exportingPdf = false;
+          _exportingExcel = false;
+        });
+      }
     }
   }
 
@@ -278,7 +279,7 @@ class _GenerateScheduleScreenState extends State<GenerateScheduleScreen> {
   bool _checking = false;
   String _schoolStart = '09:00:00';
   String _schoolEnd = '17:00:00';
-  String _status = 'draft';
+  final String _status = 'draft';
   int _maxSessionsPerDiscipline = 1;
   int _maxTotalSessions = 300;
   Map<String, dynamic>? _result;

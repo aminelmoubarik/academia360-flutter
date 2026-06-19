@@ -232,11 +232,12 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
         SnackBar(content: Text(e.toString()), backgroundColor: Brand.danger),
       );
     } finally {
-      if (!mounted) return;
-      setState(() {
-        _exportingPdf = false;
-        _exportingExcel = false;
-      });
+      if (mounted) {
+        setState(() {
+          _exportingPdf = false;
+          _exportingExcel = false;
+        });
+      }
     }
   }
 

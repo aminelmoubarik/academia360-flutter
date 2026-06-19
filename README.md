@@ -174,3 +174,15 @@ Before using the screen on an existing database, run the audit migration.
 ## Step 13 - Central Reports Hub
 
 The `Relatórios` screen was redesigned as a management reporting center. It now includes KPI cards, attendance export controls, timetable export controls and quick access to attendance, timetable and audit areas. This replaces the earlier simple attendance-only report and makes the app closer to a real school administration platform.
+
+## Step 14 - Frontend Quality Cleanup
+
+This step cleaned up minor Flutter analyzer issues introduced during the attendance, reports and export iterations:
+
+- removed unsafe `return` statements inside `finally` blocks,
+- removed unused local variables,
+- centralized query parameter building in the API service,
+- suppressed expected web-only download warnings for the Flutter Web download helper,
+- kept the reports dropdown fix from Step 13.
+
+No database migration is required for this step.
