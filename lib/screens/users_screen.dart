@@ -12,7 +12,7 @@ class UsersScreen extends StatelessWidget {
       endpoint: '/users',
       icon: Icons.manage_accounts_outlined,
       color: const Color(0xFF495057),
-      editableRoles: const ['admin', 'director'],
+      editableRoles: const ['admin'],
       canDeleteRecord: (record, User? currentUser) {
         final recordId = record['id'];
         final isCurrentUser = currentUser != null && recordId == currentUser.userId;

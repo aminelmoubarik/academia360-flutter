@@ -1,8 +1,10 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:typed_data';
 import 'package:http/http.dart' as http;
 import '../core/constants.dart';
 import '../core/storage.dart';
+import 'download_service.dart';
 
 class ApiException implements Exception {
   final String message;
@@ -219,6 +221,95 @@ class ApiService {
     final suffix = query.isEmpty ? '' : '?${query.join('&')}';
     return _getMap('/attendance/dashboard$suffix');
   }
+  static Future<List<dynamic>> getPendingScheduleApprovals() =>
+      _getList('/schedule/pending-approval');
+
+  static Future<List<dynamic>> getScheduleApprovalDetails({
+    required int classId,
+    required String startDate,
+    required String endDate,
+  }) =>
+      _getList('/schedule/approval-details/$classId?start_date=$startDate&end_date=$endDate');
+
+  static Future<Map<String, dynamic>> approveScheduleBatch({
+    required int classId,
+    required String startDate,
+    required String endDate,
+  }) async {
+    return createRecord('/schedule/approve-batch', {
+      'class_id': classId,
+      'start_date': startDate,
+      'end_date': endDate,
+    });
+  }
+
+  static Future<Map<String, dynamic>> rejectScheduleBatch({
+    required int classId,
+    required String startDate,
+    required String endDate,
+    String? reason,
+  }) async {
+    return createRecord('/schedule/reject-batch', {
+      'class_id': classId,
+      'start_date': startDate,
+      'end_date': endDate,
+      if (reason != null && reason.trim().isNotEmpty) 'reason': reason.trim(),
+    });
+  }
+
+
+
+  static String _filenameFromHeaders(Map<String, String> headers, String fallback) {
+    final contentDisposition = headers['content-disposition'];
+    if (contentDisposition == null) return fallback;
+
+    final match = RegExp(r'filename="?([^";]+)"?').firstMatch(contentDisposition);
+    return match?.group(1) ?? fallback;
+  }
+
+  static Future<void> downloadScheduleExport({
+    required int classId,
+    required String format,
+    String status = 'all',
+  }) async {
+    if (format != 'pdf' && format != 'excel') {
+      throw ApiException('Formato de exportação inválido.');
+    }
+
+    try {
+      final headers = await _authHeaders();
+      final response = await http
+          .get(
+            Uri.parse('${ApiConstants.baseUrl}/schedule/export/$format?class_id=$classId&status=$status'),
+            headers: headers,
+          )
+          .timeout(const Duration(seconds: 30));
+
+      if (response.statusCode >= 200 && response.statusCode < 300) {
+        final extension = format == 'pdf' ? 'pdf' : 'xlsx';
+        final contentType = format == 'pdf'
+            ? 'application/pdf'
+            : 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+        final filename = _filenameFromHeaders(
+          response.headers,
+          'academia360_horario.$extension',
+        );
+        DownloadService.downloadBytes(
+          Uint8List.fromList(response.bodyBytes),
+          filename: filename,
+          contentType: contentType,
+        );
+        return;
+      }
+
+      throw ApiException(_messageFromResponse(response));
+    } on TimeoutException {
+      throw ApiException('A exportação demorou demasiado.');
+    } on http.ClientException {
+      throw ApiException('Não foi possível contactar o servidor para exportar o horário.');
+    }
+  }
+
   static Future<List<dynamic>> getScheduleByClass(int classId) =>
       _getList('/schedule/class/$classId');
 

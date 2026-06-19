@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
+import '../core/permissions.dart';
 import '../core/ui.dart';
 import '../main.dart';
+import '../models/user.dart';
 import '../services/api_service.dart';
+import '../services/auth_service.dart';
 
 const _primary = Brand.blue;
 const _orange = Color(0xFFE8590C);
@@ -15,13 +18,25 @@ class ScheduleScreen extends StatefulWidget {
 class _ScheduleScreenState extends State<ScheduleScreen> {
   List<dynamic> _classes = [];
   List<dynamic> _schedule = [];
+  User? _user;
   dynamic _selectedClass;
   bool _loadingClasses = true;
   bool _loadingSchedule = false;
+  bool _exportingPdf = false;
+  bool _exportingExcel = false;
   String? _error;
 
   @override
-  void initState() { super.initState(); _loadClasses(); }
+  void initState() { super.initState(); _bootstrap(); }
+
+  Future<void> _bootstrap() async {
+    final user = await AuthService.getCurrentUser();
+    if (!mounted) return;
+    setState(() => _user = user);
+    await _loadClasses();
+  }
+
+  bool get _canGenerate => AppPermissions.canGenerateSchedule(_user?.role);
 
   Future<void> _loadClasses() async {
     setState(() { _loadingClasses = true; _error = null; });
@@ -57,7 +72,7 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
     switch (s) {
       case 'approved': return 'Aprovado';
       case 'draft': return 'Rascunho';
-      case 'cancelled': return 'Cancelado';
+      case 'cancelled': return 'Rejeitado';
       default: return s ?? '';
     }
   }
@@ -65,10 +80,45 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
   void _openGenerator() {
     if (_selectedClass == null) return;
     Navigator.push(context, MaterialPageRoute(
-      builder: (_) => GenerateScheduleScreen(selectedClass: _selectedClass),
+      builder: (_) => GenerateScheduleScreen(selectedClass: _selectedClass, user: _user),
     )).then((_) {
       if (_selectedClass != null) _loadSchedule(_selectedClass['id']);
     });
+  }
+
+  Future<void> _exportSchedule(String format) async {
+    if (_selectedClass == null) return;
+
+    setState(() {
+      if (format == 'pdf') {
+        _exportingPdf = true;
+      } else {
+        _exportingExcel = true;
+      }
+    });
+
+    try {
+      await ApiService.downloadScheduleExport(
+        classId: _selectedClass['id'],
+        format: format,
+        status: 'all',
+      );
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(format == 'pdf' ? 'PDF exportado com sucesso.' : 'Excel exportado com sucesso.')),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(e.toString()), backgroundColor: const Color(0xFFE03131)),
+      );
+    } finally {
+      if (!mounted) return;
+      setState(() {
+        _exportingPdf = false;
+        _exportingExcel = false;
+      });
+    }
   }
 
   @override
@@ -112,28 +162,51 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                     const SizedBox(height: 8),
                     const Text('Antes de guardar, use a pré-visualização para confirmar as condições.', style: TextStyle(fontSize: 12, color: Colors.grey)),
                     const SizedBox(height: 14),
-                    ElevatedButton.icon(
-                      style: ElevatedButton.styleFrom(backgroundColor: _orange),
-                      icon: const Icon(Icons.auto_awesome, size: 16),
-                      label: const Text('Gerar horário'),
-                      onPressed: _openGenerator,
-                    ),
+                    if (_canGenerate)
+                      ElevatedButton.icon(
+                        style: ElevatedButton.styleFrom(backgroundColor: _orange),
+                        icon: const Icon(Icons.auto_awesome, size: 16),
+                        label: const Text('Gerar horário'),
+                        onPressed: _openGenerator,
+                      )
+                    else
+                      const Text('O seu perfil pode consultar horários, mas não gerar novos horários.', style: TextStyle(fontSize: 12, color: Colors.grey)),
                   ],
                 )))
               else
                 Expanded(child: Column(children: [
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    child: Wrap(
+                      spacing: 8,
+                      runSpacing: 6,
+                      crossAxisAlignment: WrapCrossAlignment.center,
                       children: [
-                        Text('${_schedule.length} sessões',
-                            style: TextStyle(color: Colors.grey.shade600, fontSize: 13)),
-                        TextButton.icon(
-                          icon: const Icon(Icons.auto_awesome, size: 16),
-                          label: const Text('Regenerar'),
-                          onPressed: _openGenerator,
+                        Padding(
+                          padding: const EdgeInsets.only(right: 8),
+                          child: Text('${_schedule.length} sessões',
+                              style: TextStyle(color: Colors.grey.shade600, fontSize: 13)),
                         ),
+                        OutlinedButton.icon(
+                          icon: _exportingPdf
+                              ? const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2))
+                              : const Icon(Icons.picture_as_pdf_outlined, size: 16),
+                          label: const Text('PDF'),
+                          onPressed: _exportingPdf ? null : () => _exportSchedule('pdf'),
+                        ),
+                        OutlinedButton.icon(
+                          icon: _exportingExcel
+                              ? const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2))
+                              : const Icon(Icons.table_chart_outlined, size: 16),
+                          label: const Text('Excel'),
+                          onPressed: _exportingExcel ? null : () => _exportSchedule('excel'),
+                        ),
+                        if (_canGenerate)
+                          TextButton.icon(
+                            icon: const Icon(Icons.auto_awesome, size: 16),
+                            label: const Text('Regenerar'),
+                            onPressed: _openGenerator,
+                          ),
                       ],
                     ),
                   ),
@@ -190,7 +263,8 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
 
 class GenerateScheduleScreen extends StatefulWidget {
   final dynamic selectedClass;
-  const GenerateScheduleScreen({super.key, required this.selectedClass});
+  final User? user;
+  const GenerateScheduleScreen({super.key, required this.selectedClass, this.user});
   @override
   State<GenerateScheduleScreen> createState() => _GenerateScheduleScreenState();
 }
@@ -262,6 +336,10 @@ class _GenerateScheduleScreenState extends State<GenerateScheduleScreen> {
   }
 
   Future<void> _generate() async {
+    if (!AppPermissions.canGenerateSchedule(widget.user?.role)) {
+      setState(() => _error = 'O seu perfil não tem permissão para gerar horários.');
+      return;
+    }
     if (!_validateSettings()) return;
     setState(() { _generating = true; _result = null; _error = null; });
     try {
@@ -356,14 +434,22 @@ class _GenerateScheduleScreenState extends State<GenerateScheduleScreen> {
                 value: _replace,
                 onChanged: (v) => setState(() => _replace = v),
               ),
-              DropdownButtonFormField<String>(
-                initialValue: _status,
-                decoration: const InputDecoration(labelText: 'Estado ao guardar'),
-                items: const [
-                  DropdownMenuItem(value: 'draft', child: Text('Rascunho')),
-                  DropdownMenuItem(value: 'approved', child: Text('Aprovado')),
-                ],
-                onChanged: (v) => setState(() => _status = v ?? 'draft'),
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(13),
+                decoration: BoxDecoration(
+                  color: Brand.blueSoft.withValues(alpha: 0.55),
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(color: Brand.blue.withValues(alpha: 0.14)),
+                ),
+                child: const Row(children: [
+                  Icon(Icons.verified_outlined, color: Brand.blue, size: 18),
+                  SizedBox(width: 8),
+                  Expanded(child: Text(
+                    'Ao guardar, o horário fica em rascunho e deve ser aprovado pela Direção.',
+                    style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w700),
+                  )),
+                ]),
               ),
               const SizedBox(height: 16),
               Row(children: [

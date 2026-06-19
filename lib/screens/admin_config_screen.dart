@@ -19,6 +19,7 @@ class AdminConfigScreen extends StatelessWidget {
           endpoint: '/school-years',
           icon: Icons.date_range_outlined,
           color: Brand.blue,
+          editableRoles: const ['admin'],
           fields: const [
             CrudField(keyName: 'name', label: 'Nome', required: true, hint: '2025/2026'),
             CrudField(keyName: 'start_date', label: 'Data de início', type: CrudFieldType.date, required: true, hint: 'AAAA-MM-DD'),
@@ -40,6 +41,7 @@ class AdminConfigScreen extends StatelessWidget {
           idKey: 'id',
           icon: Icons.calendar_month_outlined,
           color: const Color(0xFF0B7285),
+          editableRoles: const ['admin'],
           fields: [
             CrudField(
               keyName: 'school_year_id',
@@ -69,6 +71,7 @@ class AdminConfigScreen extends StatelessWidget {
           endpoint: '/teacher-availability',
           icon: Icons.access_time_outlined,
           color: const Color(0xFFE8590C),
+          editableRoles: const ['admin'],
           fields: [
             CrudField(
               keyName: 'professor_id',
@@ -119,6 +122,7 @@ class AdminConfigScreen extends StatelessWidget {
           endpoint: '/discipline-course-years',
           icon: Icons.tune_outlined,
           color: const Color(0xFF7048E8),
+          editableRoles: const ['admin'],
           fields: [
             CrudField(
               keyName: 'discipline_id',
@@ -177,6 +181,7 @@ class AdminConfigScreen extends StatelessWidget {
           endpoint: '/professor-discipline-course-years',
           icon: Icons.link_outlined,
           color: const Color(0xFF087F5B),
+          editableRoles: const ['admin'],
           canUpdate: false,
           fields: [
             CrudField(

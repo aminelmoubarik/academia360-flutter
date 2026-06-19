@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
+import '../core/permissions.dart';
 import '../core/ui.dart';
 import '../main.dart';
+import '../models/user.dart';
 import '../services/api_service.dart';
+import '../services/auth_service.dart';
 import 'attendance_punch_screen.dart';
 
 class AttendanceScreen extends StatefulWidget {
@@ -12,11 +15,19 @@ class AttendanceScreen extends StatefulWidget {
 
 class _AttendanceScreenState extends State<AttendanceScreen> {
   List<dynamic> _all = [], _filtered = [];
+  User? _user;
   bool _loading = true;
   String? _error;
 
   @override
-  void initState() { super.initState(); _load(); }
+  void initState() { super.initState(); _bootstrap(); }
+
+  Future<void> _bootstrap() async {
+    final user = await AuthService.getCurrentUser();
+    if (!mounted) return;
+    setState(() => _user = user);
+    await _load();
+  }
 
   Future<void> _load() async {
     setState(() { _loading = true; _error = null; });
@@ -48,13 +59,15 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
       appBar: AppBar(
         title: const Text('Assiduidade'),
         actions: [
-          FilledButton.icon(
-            style: FilledButton.styleFrom(padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9)),
-            onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const AttendancePunchScreen())).then((_) => _load()),
-            icon: const Icon(Icons.contactless_outlined, size: 18),
-            label: const Text('Picagem'),
-          ),
-          const SizedBox(width: 10),
+          if (AppPermissions.canUsePunchTerminal(_user?.role)) ...[
+            FilledButton.icon(
+              style: FilledButton.styleFrom(padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9)),
+              onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const AttendancePunchScreen())).then((_) => _load()),
+              icon: const Icon(Icons.contactless_outlined, size: 18),
+              label: const Text('Picagem'),
+            ),
+            const SizedBox(width: 10),
+          ],
         ],
         backgroundColor: AppColors.of(context).surface,
         foregroundColor: AppColors.of(context).ink,

@@ -12,6 +12,7 @@ class StudentsScreen extends StatelessWidget {
       endpoint: '/students',
       icon: Icons.people_alt_outlined,
       color: Brand.blue,
+      editableRoles: const ['admin', 'secretary'],
       fields: [
         const CrudField(keyName: 'full_name', label: 'Nome completo', required: true),
         const CrudField(keyName: 'student_number', label: 'Número de estudante'),

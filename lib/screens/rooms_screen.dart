@@ -11,6 +11,7 @@ class RoomsScreen extends StatelessWidget {
       endpoint: '/rooms',
       icon: Icons.meeting_room_outlined,
       color: const Color(0xFF087F5B),
+      editableRoles: const ['admin'],
       fields: const [
         CrudField(keyName: 'name', label: 'Nome da sala', required: true),
         CrudField(keyName: 'capacity', label: 'Capacidade', type: CrudFieldType.integer),

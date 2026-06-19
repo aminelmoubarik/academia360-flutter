@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 
 import '../core/brand_logo.dart';
+import '../core/permissions.dart';
 import '../core/theme.dart';
+import '../core/ui.dart';
 import '../models/user.dart';
 import '../services/api_service.dart';
 import '../services/auth_service.dart';
@@ -16,6 +18,7 @@ import 'login_screen.dart';
 import 'professors_screen.dart';
 import 'reports_screen.dart';
 import 'rooms_screen.dart';
+import 'schedule_approval_screen.dart';
 import 'schedule_screen.dart';
 import 'students_screen.dart';
 import 'users_screen.dart';
@@ -85,6 +88,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   void _navigate(String key) {
+    final role = _user?.role;
+    if (!AppPermissions.canOpenFeature(role, key)) {
+      AppFeedback.error(context, 'O seu perfil não tem permissão para abrir esta área.');
+      return;
+    }
     final Widget? screen = switch (key) {
       'students' => const StudentsScreen(),
       'professors' => const ProfessorsScreen(),
@@ -99,6 +107,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       'reports' => const ReportsScreen(),
       'configuration' => const AdminConfigScreen(),
       'schedule' || 'my_schedule' || 'generate_schedule' => const ScheduleScreen(),
+      'schedule_approval' => const ScheduleApprovalScreen(),
       _ => null,
     };
     if (screen == null) return;
@@ -192,7 +201,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
               child: _UserMenuButton(
                 user: user,
                 roleLabel: _roleLabel(user.role),
-                canOpenConfiguration: ['admin', 'director', 'secretary'].contains(user.role),
+                canOpenConfiguration: AppPermissions.canManageConfiguration(user.role),
                 onProfile: () => _showUserProfile(user),
                 onConfiguration: () => _navigate('configuration'),
                 onPunch: () => _navigate('attendance_punch'),
@@ -235,52 +244,44 @@ class _DashboardScreenState extends State<DashboardScreen> {
 }
 
 List<_NavSection> _navSectionsForRole(String role) {
-  final core = _NavSection('Núcleo do projeto', [
-    _NavItem('attendance_punch', 'Terminal de picagem', Icons.contactless_outlined, Brand.blue),
-    _NavItem('generate_schedule', 'Gerador de horários', Icons.auto_awesome_motion_outlined, Brand.danger),
-  ]);
+  final normalized = AppPermissions.normalize(role);
 
-  final attendance = _NavSection('Assiduidade', [
-    _NavItem('attendance', 'Registos de assiduidade', Icons.fingerprint, Brand.pink),
-    _NavItem('justifications', 'Justificações de faltas', Icons.fact_check_outlined, Brand.blue),
-    _NavItem('reports', 'Relatórios', Icons.bar_chart_outlined, Brand.amber),
-  ]);
+  _NavSection section(String title, List<_NavItem> items) {
+    return _NavSection(
+      title,
+      items.where((item) => AppPermissions.canOpenFeature(normalized, item.key)).toList(),
+    );
+  }
 
-  final schedules = _NavSection('Horários', [
-    _NavItem('schedule', 'Horários', Icons.calendar_today_outlined, Brand.blue),
-  ]);
+  final sections = [
+    section('Núcleo do projeto', [
+      _NavItem('attendance_punch', 'Terminal de picagem', Icons.contactless_outlined, Brand.blue),
+      _NavItem('generate_schedule', 'Gerador de horários', Icons.auto_awesome_motion_outlined, Brand.danger),
+      _NavItem('schedule_approval', 'Aprovação de horários', Icons.verified_outlined, Brand.ok),
+      _NavItem('schedule', 'Horários', Icons.calendar_today_outlined, Brand.blue),
+    ]),
+    section('Assiduidade', [
+      _NavItem('attendance', 'Registos de assiduidade', Icons.fingerprint, Brand.pink),
+      _NavItem('justifications', 'Justificações de faltas', Icons.fact_check_outlined, Brand.blue),
+      _NavItem('reports', 'Relatórios', Icons.bar_chart_outlined, Brand.amber),
+    ]),
+    section('Gestão académica', [
+      _NavItem('students', 'Estudantes', Icons.people_alt_outlined, Brand.blue),
+      _NavItem('professors', 'Professores', Icons.school_outlined, Brand.ok),
+      _NavItem('classes', 'Turmas', Icons.groups_outlined, Brand.warn),
+      _NavItem('courses', 'Cursos', Icons.layers_outlined, Brand.teal),
+      _NavItem('disciplines', 'Disciplinas', Icons.menu_book_outlined, Brand.violet),
+      _NavItem('rooms', 'Salas', Icons.meeting_room_outlined, Brand.green),
+    ]),
+    section('Configuração', [
+      _NavItem('configuration', 'Calendário, cargas e disponibilidade', Icons.settings_outlined, const Color(0xFF5B6472)),
+    ]),
+    section('Administração', [
+      _NavItem('users', 'Utilizadores', Icons.manage_accounts_outlined, const Color(0xFF7C8698)),
+    ]),
+  ];
 
-  final academic = _NavSection('Gestão académica', [
-    _NavItem('students', 'Estudantes', Icons.people_alt_outlined, Brand.blue),
-    _NavItem('professors', 'Professores', Icons.school_outlined, Brand.ok),
-    _NavItem('classes', 'Turmas', Icons.groups_outlined, Brand.warn),
-    _NavItem('courses', 'Cursos', Icons.layers_outlined, Brand.teal),
-    _NavItem('disciplines', 'Disciplinas', Icons.menu_book_outlined, Brand.violet),
-    _NavItem('rooms', 'Salas', Icons.meeting_room_outlined, Brand.green),
-  ]);
-
-  final configuration = _NavSection('Configuração', [
-    _NavItem('configuration', 'Calendário, cargas e disponibilidade', Icons.settings_outlined, const Color(0xFF5B6472)),
-  ]);
-
-  final admin = _NavSection('Administração', [
-    _NavItem('users', 'Utilizadores', Icons.manage_accounts_outlined, const Color(0xFF7C8698)),
-  ]);
-
-  return switch (role) {
-    'admin' => [core, attendance, schedules, academic, configuration, admin],
-    'director' => [core, attendance, schedules, academic, configuration],
-    'secretary' => [core, attendance, schedules, academic, configuration],
-    'professor' => [
-        _NavSection('Trabalho diário', [
-          _NavItem('attendance_punch', 'Picagem manual', Icons.contactless_outlined, Brand.blue),
-          _NavItem('my_schedule', 'O meu horário', Icons.calendar_month_outlined, Brand.blue),
-          _NavItem('attendance', 'Registos de assiduidade', Icons.fingerprint, Brand.pink),
-          _NavItem('justifications', 'Justificações', Icons.fact_check_outlined, Brand.blue),
-        ]),
-      ],
-    _ => [core, attendance, schedules],
-  };
+  return sections.where((section) => section.items.isNotEmpty).toList();
 }
 
 class _DashboardStats {
@@ -584,9 +585,9 @@ class _DashboardHome extends StatelessWidget {
           const SizedBox(height: 18),
           _StatsWrap(stats: stats),
           const SizedBox(height: 28),
-          _FocusModules(onNavigate: onNavigate),
+          _FocusModules(role: user.role, onNavigate: onNavigate),
           const SizedBox(height: 28),
-          _ProjectMap(onNavigate: onNavigate),
+          _ProjectMap(role: user.role, onNavigate: onNavigate),
           const SizedBox(height: 30),
           Center(
             child: Text(
@@ -625,8 +626,9 @@ class _StatsWrap extends StatelessWidget {
 }
 
 class _FocusModules extends StatelessWidget {
+  final String role;
   final ValueChanged<String> onNavigate;
-  const _FocusModules({required this.onNavigate});
+  const _FocusModules({required this.role, required this.onNavigate});
 
   @override
   Widget build(BuildContext context) {
@@ -641,22 +643,42 @@ class _FocusModules extends StatelessWidget {
       LayoutBuilder(builder: (context, constraints) {
         final narrow = constraints.maxWidth < 860;
         final cards = [
-          _LargeActionCard(
-            icon: Icons.contactless_outlined,
-            title: 'Picagem NFC/RFID',
-            subtitle: 'Terminal para cartões, QR, código de barras e registo manual com timestamp.',
-            color: Brand.blue,
-            actionLabel: 'Abrir terminal',
-            onTap: () => onNavigate('attendance_punch'),
-          ),
-          _LargeActionCard(
-            icon: Icons.auto_awesome_motion_outlined,
-            title: 'Geração automática de horários',
-            subtitle: 'Disponibilidade docente, calendário escolar, salas práticas e conflitos.',
-            color: Brand.danger,
-            actionLabel: 'Gerar horários',
-            onTap: () => onNavigate('generate_schedule'),
-          ),
+          if (AppPermissions.canUsePunchTerminal(role))
+            _LargeActionCard(
+              icon: Icons.contactless_outlined,
+              title: 'Picagem NFC/RFID',
+              subtitle: 'Terminal para cartões, QR, código de barras e registo manual com timestamp.',
+              color: Brand.blue,
+              actionLabel: 'Abrir terminal',
+              onTap: () => onNavigate('attendance_punch'),
+            ),
+          if (AppPermissions.canGenerateSchedule(role))
+            _LargeActionCard(
+              icon: Icons.auto_awesome_motion_outlined,
+              title: 'Geração automática de horários',
+              subtitle: 'Disponibilidade docente, calendário escolar, salas práticas e conflitos.',
+              color: Brand.danger,
+              actionLabel: 'Gerar horários',
+              onTap: () => onNavigate('generate_schedule'),
+            )
+          else if (AppPermissions.canApproveSchedule(role))
+            _LargeActionCard(
+              icon: Icons.verified_outlined,
+              title: 'Aprovação de horários',
+              subtitle: 'Reveja rascunhos gerados e aprove ou rejeite antes da publicação.',
+              color: Brand.ok,
+              actionLabel: 'Rever pendentes',
+              onTap: () => onNavigate('schedule_approval'),
+            )
+          else if (AppPermissions.canViewSchedule(role))
+            _LargeActionCard(
+              icon: Icons.calendar_today_outlined,
+              title: 'Consulta de horários',
+              subtitle: 'Acompanhe horários por turma, professor e ocupação de salas.',
+              color: Brand.danger,
+              actionLabel: 'Ver horários',
+              onTap: () => onNavigate('schedule'),
+            ),
         ];
         if (narrow) return Column(children: [for (final c in cards) ...[c, const SizedBox(height: 14)]]);
         return Row(children: [for (final c in cards) Expanded(child: Padding(padding: const EdgeInsets.only(right: 14), child: c))]);
@@ -666,8 +688,9 @@ class _FocusModules extends StatelessWidget {
 }
 
 class _ProjectMap extends StatelessWidget {
+  final String role;
   final ValueChanged<String> onNavigate;
-  const _ProjectMap({required this.onNavigate});
+  const _ProjectMap({required this.role, required this.onNavigate});
 
   @override
   Widget build(BuildContext context) {
@@ -691,18 +714,30 @@ class _ProjectMap extends StatelessWidget {
         _MapLink('Relatórios', 'reports'),
         _MapLink('Registos de assiduidade', 'attendance'),
         _MapLink('Justificações', 'justifications'),
+        _MapLink('Aprovação de horários', 'schedule_approval'),
         _MapLink('Utilizadores', 'users'),
       ]),
     ];
+
+    final visibleGroups = groups
+        .map((group) => _MapGroup(
+              group.title,
+              group.subtitle,
+              group.icon,
+              group.color,
+              group.links.where((link) => AppPermissions.canOpenFeature(role, link.key)).toList(),
+            ))
+        .where((group) => group.links.isNotEmpty)
+        .toList();
 
     return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
       Text('Mapa da aplicação', style: TextStyle(fontSize: 17, fontWeight: FontWeight.w900, color: c.ink)),
       const SizedBox(height: 12),
       LayoutBuilder(builder: (context, constraints) {
         final narrow = constraints.maxWidth < 900;
-        if (narrow) return Column(children: [for (final g in groups) ...[_MapGroupCard(group: g, onNavigate: onNavigate), const SizedBox(height: 12)]]);
+        if (narrow) return Column(children: [for (final g in visibleGroups) ...[_MapGroupCard(group: g, onNavigate: onNavigate), const SizedBox(height: 12)]]);
         return Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          for (final g in groups) Expanded(child: Padding(padding: const EdgeInsets.only(right: 12), child: _MapGroupCard(group: g, onNavigate: onNavigate))),
+          for (final g in visibleGroups) Expanded(child: Padding(padding: const EdgeInsets.only(right: 12), child: _MapGroupCard(group: g, onNavigate: onNavigate))),
         ]);
       }),
     ]);
@@ -1014,6 +1049,7 @@ class _HeroPanel extends StatelessWidget {
                 const SizedBox(height: 15),
                 const Text('Prioridade do projeto: picagem NFC/RFID e geração automática de horários.', style: TextStyle(color: Colors.white, fontSize: 13, height: 1.45)),
                 const SizedBox(height: 16),
+                if (AppPermissions.canUsePunchTerminal(user.role))
                 FilledButton.icon(
                   style: FilledButton.styleFrom(backgroundColor: Colors.white, foregroundColor: Brand.blue),
                   onPressed: onPunch,

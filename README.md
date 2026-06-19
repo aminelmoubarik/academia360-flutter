@@ -41,12 +41,14 @@ The app is connected to the Academia360 FastAPI backend.
   - teacher availability,
   - discipline workload,
   - professor-discipline assignments.
-- Timetable generation screen with:
+- Timetable generation and export screen with:
   - readiness check,
   - dry-run preview,
   - replacement of existing schedules,
   - generation limits,
-  - status selection.
+  - status selection,
+  - PDF export,
+  - Excel export.
 - Reports, attendance views and absence justification management.
 - User password creation and update flow.
 - Improved error handling so forms remain open when validation fails.
@@ -101,11 +103,22 @@ CARD003
 
 ---
 
+
+## Role-Based UI
+
+The frontend uses a central permission layer in `lib/core/permissions.dart`. The sidebar, dashboard actions and CRUD buttons adapt to the authenticated role:
+
+- Admin: full access.
+- Director: dashboards, reports, timetables and justification review.
+- Secretary: students, classes, attendance and justifications.
+- Professor: timetable/attendance views and manual attendance punching.
+
+Backend authorization still remains the source of truth; hiding UI actions is only the first layer.
+
 ## Future Frontend Improvements
 
 - Real NFC integration on mobile using `flutter_nfc_kit`.
 - QR/barcode camera scanning.
 - More advanced offline storage using Hive or Isar.
 - Automatic sync on reconnection.
-- Timetable approval flow for the director role.
-- PDF/Excel export UI.
+- Attendance report export UI.

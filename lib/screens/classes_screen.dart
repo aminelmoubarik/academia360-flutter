@@ -11,6 +11,7 @@ class ClassesScreen extends StatelessWidget {
       endpoint: '/classes',
       icon: Icons.groups_outlined,
       color: const Color(0xFFE8590C),
+      editableRoles: const ['admin', 'secretary'],
       fields: [
         const CrudField(
           keyName: 'name',

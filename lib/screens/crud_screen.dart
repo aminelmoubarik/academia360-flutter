@@ -80,6 +80,9 @@ class CrudScreen extends StatefulWidget {
   final bool canCreate;
   final bool canUpdate;
   final bool canDelete;
+  final List<String>? createRoles;
+  final List<String>? updateRoles;
+  final List<String>? deleteRoles;
   final String Function(Map<String, dynamic>)? deletePathBuilder;
   final bool Function(Map<String, dynamic> record, User? currentUser)? canDeleteRecord;
 
@@ -98,6 +101,9 @@ class CrudScreen extends StatefulWidget {
     this.canCreate = true,
     this.canUpdate = true,
     this.canDelete = true,
+    this.createRoles,
+    this.updateRoles,
+    this.deleteRoles,
     this.deletePathBuilder,
     this.canDeleteRecord,
   });
@@ -113,10 +119,15 @@ class _CrudScreenState extends State<CrudScreen> {
   bool _loading = true;
   String? _error;
 
-  bool get _canManage => _user != null && widget.editableRoles.contains(_user!.role);
+  bool _roleAllowed(List<String>? roles) =>
+      _user != null && (roles ?? widget.editableRoles).contains(_user!.role);
+
+  bool get _canManage => _roleAllowed(widget.editableRoles);
+  bool get _canCreate => widget.canCreate && _roleAllowed(widget.createRoles);
+  bool get _canUpdate => widget.canUpdate && _roleAllowed(widget.updateRoles);
 
   bool _canDeleteRecord(Map<String, dynamic> record) {
-    if (!_canManage || !widget.canDelete) return false;
+    if (!widget.canDelete || !_roleAllowed(widget.deleteRoles)) return false;
     return widget.canDeleteRecord?.call(record, _user) ?? true;
   }
 
@@ -172,11 +183,9 @@ class _CrudScreenState extends State<CrudScreen> {
   }
 
   Future<void> _openForm([Map<String, dynamic>? record]) async {
-    if (!_canManage) return;
-
     final isEdit = record != null;
-    if (isEdit && !widget.canUpdate) return;
-    if (!isEdit && !widget.canCreate) return;
+    if (isEdit && !_canUpdate) return;
+    if (!isEdit && !_canCreate) return;
 
     final saved = await showDialog<bool>(
       context: context,
@@ -286,7 +295,7 @@ class _CrudScreenState extends State<CrudScreen> {
           ),
         ),
       ),
-      floatingActionButton: _canManage && widget.canCreate
+      floatingActionButton: _canCreate
           ? FloatingActionButton.extended(
               elevation: 4,
               backgroundColor: widget.color,
@@ -370,18 +379,16 @@ class _CrudScreenState extends State<CrudScreen> {
                                     color: widget.color,
                                     title: widget.titleBuilder(record),
                                     subtitle: widget.subtitleBuilder(record),
-                                    trailing: _canManage
+                                    trailing: (_canUpdate || _canDeleteRecord(record))
                                         ? _RowActions(
                                             color: widget.color,
-                                            canUpdate: widget.canUpdate,
+                                            canUpdate: _canUpdate,
                                             canDelete: _canDeleteRecord(record),
                                             onEdit: () => _openForm(record),
                                             onDelete: () => _delete(record),
                                           )
                                         : null,
-                                    onTap: _canManage && widget.canUpdate
-                                        ? () => _openForm(record)
-                                        : null,
+                                    onTap: _canUpdate ? () => _openForm(record) : null,
                                   ),
                                 );
                               },

@@ -11,6 +11,7 @@ class ProfessorsScreen extends StatelessWidget {
       endpoint: '/professors',
       icon: Icons.school_outlined,
       color: const Color(0xFF0CA678),
+      editableRoles: const ['admin'],
       fields: [
         CrudField(
           keyName: 'user_id',

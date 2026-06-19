@@ -11,6 +11,7 @@ class CoursesScreen extends StatelessWidget {
       endpoint: '/courses',
       icon: Icons.layers_outlined,
       color: const Color(0xFF0B7285),
+      editableRoles: const ['admin'],
       fields: const [
         CrudField(keyName: 'code', label: 'Código', required: true, hint: 'Exemplo: TGPSI'),
         CrudField(keyName: 'name', label: 'Nome do curso', required: true),

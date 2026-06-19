@@ -11,6 +11,7 @@ class DisciplinesScreen extends StatelessWidget {
       endpoint: '/disciplines',
       icon: Icons.menu_book_outlined,
       color: const Color(0xFF7048E8),
+      editableRoles: const ['admin'],
       fields: const [
         CrudField(keyName: 'name', label: 'Nome da disciplina', required: true),
         CrudField(keyName: 'code', label: 'Código', hint: 'Exemplo: PROG'),
