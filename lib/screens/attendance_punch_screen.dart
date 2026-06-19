@@ -167,6 +167,19 @@ class _AttendancePunchScreenState extends State<AttendancePunchScreen> {
         punchTime: offlineRecord['punch_time'] as String,
       );
       if (!mounted) return;
+
+      // O servidor pode rejeitar uma picagem repetida em poucos segundos.
+      if (result['duplicate'] == true) {
+        setState(() => _submitting = false);
+        _codeController.clear();
+        AppFeedback.info(
+          context,
+          result['message']?.toString() ?? 'Picagem repetida ignorada.',
+        );
+        _focusNode.requestFocus();
+        return;
+      }
+
       setState(() {
         _lastResult = result;
         _submitting = false;
@@ -226,6 +239,14 @@ class _AttendancePunchScreenState extends State<AttendancePunchScreen> {
           .map((e) => e['index'])
           .whereType<int>()
           .toSet();
+      // Registos detetados como duplicados no servidor já estão guardados:
+      // tratam-se como resolvidos para não ficarem presos na fila offline.
+      final duplicates = (result['duplicates'] as List? ?? const [])
+          .whereType<Map>()
+          .map((e) => e['index'])
+          .whereType<int>()
+          .toSet();
+      final resolved = {...synced, ...duplicates};
       final failed = (result['failed'] as List? ?? const []).whereType<Map>().toList();
       final failedByIndex = <int, String>{
         for (final item in failed)
@@ -235,7 +256,7 @@ class _AttendancePunchScreenState extends State<AttendancePunchScreen> {
       final now = DateTime.now().toIso8601String();
       final remaining = <Map<String, dynamic>>[];
       for (var i = 0; i < snapshot.length; i++) {
-        if (synced.contains(i)) continue;
+        if (resolved.contains(i)) continue;
         final record = _normaliseOfflineRecord(snapshot[i]);
         record['attempts'] = (record['attempts'] as int) + 1;
         record['last_sync_attempt'] = now;
@@ -243,12 +264,13 @@ class _AttendancePunchScreenState extends State<AttendancePunchScreen> {
         remaining.add(record);
       }
 
+      final resolvedCount = resolved.length;
       setState(() {
         _offlineQueue = remaining;
         if (remaining.isEmpty) {
           _syncStatus = 'Todas as picagens offline foram sincronizadas.';
-        } else if (synced.isNotEmpty) {
-          _syncStatus = '${synced.length} sincronizadas, ${remaining.length} ainda pendentes.';
+        } else if (resolvedCount > 0) {
+          _syncStatus = '$resolvedCount sincronizadas, ${remaining.length} ainda pendentes.';
         } else {
           _syncStatus = 'Não foi possível sincronizar a fila offline.';
         }
